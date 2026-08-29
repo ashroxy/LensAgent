@@ -237,6 +237,12 @@ async function handleStartAgent(goal, settingsOverride = null) {
     if (!offscreenPort) await new Promise((r) => setTimeout(r, 600));
     if (!offscreenPort) return { status: "ERROR", error: "Offscreen perception engine failed to connect." };
 
+    // Clean up any stale or lingering debugger attachment on this tab
+    await new Promise((r) => chrome.debugger.detach({ tabId: tab.id }, () => {
+      if (chrome.runtime.lastError) { /* ignore if not attached */ }
+      r();
+    }));
+
     // Create capture engine
     const captureEngine = new CaptureEngine(tab.id, {
       quality:          settings.captureQuality,
