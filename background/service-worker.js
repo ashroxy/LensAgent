@@ -169,7 +169,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
     case POPUP_START_AGENT:
-      handleStartAgent(msg.goal, msg.settings).then(sendResponse);
+      handleStartAgent(msg.goal, msg.settings, msg.targetTabId).then(sendResponse);
       return true;
 
     case POPUP_STOP_AGENT:
@@ -206,7 +206,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // 6. START AGENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function handleStartAgent(goal, settingsOverride = null) {
+async function handleStartAgent(goal, settingsOverride = null, targetTabId = null) {
   try {
     // Multi-session prevention
     if (activeAgent && activeAgent.state === AgentState.RUNNING) {
@@ -221,9 +221,19 @@ async function handleStartAgent(goal, settingsOverride = null) {
     const settings = await storage.loadSettings();
     if (settingsOverride) Object.assign(settings, settingsOverride);
 
-    // Get active tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) return { status: "ERROR", error: "No active browser tab found." };
+    // Get target tab — if a specific tabId was passed (from pop-out mode), use that.
+    // Otherwise fall back to the active tab in the current window.
+    let tab;
+    if (targetTabId) {
+      tab = await chrome.tabs.get(targetTabId).catch(() => null);
+    }
+    if (!tab) {
+      // Query all tabs in the current window, pick the active non-extension one
+      const allTabs = await chrome.tabs.query({ currentWindow: true });
+      tab = allTabs.find(t => t.active && !t.url?.startsWith("chrome-extension://"))
+         || allTabs.find(t => !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"));
+    }
+    if (!tab?.id) return { status: "ERROR", error: "No automatable browser tab found. Please open a web page first." };
 
     const url = tab.url || "";
     const BLOCKED = ["chrome://", "chrome-extension://", "edge://", "about:blank",

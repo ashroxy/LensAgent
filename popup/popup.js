@@ -99,15 +99,41 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CONTROLS
+// POP-OUT MODE DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// If this page is opened as a full tab (not a popup), we are in "pop-out" mode.
+// In pop-out mode, Start Agent must target a real webpage tab, not this extension tab.
+let targetTabId = null;
+const isPopoutMode = window.location.href.startsWith("chrome-extension://") 
+  && (window.innerWidth > 800 || document.referrer === "");
+
 const btnPopout = document.getElementById("btnPopout");
+
+(async () => {
+  if (isPopoutMode || window.matchMedia("(min-width: 801px)").matches) {
+    // We're likely in a full tab — resolve the target tab now
+    const allTabs = await chrome.tabs.query({ currentWindow: true });
+    const webTab = allTabs.find(t => !t.active && !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"))
+      || allTabs.find(t => !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"));
+    if (webTab) {
+      targetTabId = webTab.id;
+      addLog(`Pop-out mode: targeting tab "${webTab.title || webTab.url}"`, "info");
+    }
+    // Hide the pop-out button since we're already in full tab
+    if (btnPopout) btnPopout.style.display = "none";
+  }
+})();
+
 if (btnPopout) {
   btnPopout.addEventListener("click", () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html") });
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 startBtn.addEventListener("click", async () => {
   const goal = goalInput.value.trim();
@@ -115,7 +141,10 @@ startBtn.addEventListener("click", async () => {
   hideError();
   startBtn.disabled = true;
 
-  const resp = await msg({ type: POPUP_START_AGENT, goal });
+  const payload = { type: POPUP_START_AGENT, goal };
+  if (targetTabId) payload.targetTabId = targetTabId;
+
+  const resp = await msg(payload);
 
   if (resp?.status === "STARTED") {
     stopBtn.disabled = false;
@@ -184,38 +213,64 @@ function renderAuditFrame(p) {
   if (p.rawFrame) {
     const img = new Image();
     img.onload = () => {
+      // Dynamically match canvas internal resolution to incoming frame
+      if (rawCanvas.width !== img.naturalWidth || rawCanvas.height !== img.naturalHeight) {
+        rawCanvas.width  = img.naturalWidth;
+        rawCanvas.height = img.naturalHeight;
+      }
       rawCtx.drawImage(img, 0, 0, rawCanvas.width, rawCanvas.height);
-      drawBBoxes(rawCtx, p.boundingBoxes || []);
+      drawBBoxes(rawCtx, p.boundingBoxes || [], rawCanvas.width, rawCanvas.height);
     };
     img.src = `data:image/jpeg;base64,${p.rawFrame}`;
   }
 
   if (p.redactedFrame) {
     const img2 = new Image();
-    img2.onload = () => redactedCtx.drawImage(img2, 0, 0, redactedCanvas.width, redactedCanvas.height);
+    img2.onload = () => {
+      if (redactedCanvas.width !== img2.naturalWidth || redactedCanvas.height !== img2.naturalHeight) {
+        redactedCanvas.width  = img2.naturalWidth;
+        redactedCanvas.height = img2.naturalHeight;
+      }
+      redactedCtx.drawImage(img2, 0, 0, redactedCanvas.width, redactedCanvas.height);
+    };
     img2.src = `data:image/jpeg;base64,${p.redactedFrame}`;
   }
 }
 
-function drawBBoxes(ctx, elements) {
-  const sx = rawCanvas.width / 1280;
-  const sy = rawCanvas.height / 720;
+function drawBBoxes(ctx, elements, canvasW, canvasH) {
+  // Elements report bboxes in their original coordinate space.
+  // Scale to the actual canvas dimensions.
+  const sourceW = canvasW || 1280;
+  const sourceH = canvasH || 720;
 
   for (const el of elements) {
-    const [bx, by, bw, bh] = el.bbox;
-    const x = bx * sx, y = by * sy, w = bw * sx, h = bh * sy;
+    const bbox = el.bbox || el.boundingBox;
+    if (!bbox) continue;
+
+    let x, y, w, h;
+    if (Array.isArray(bbox)) {
+      [x, y, w, h] = bbox;
+    } else {
+      x = bbox.x; y = bbox.y; w = bbox.width; h = bbox.height;
+    }
+    if (!w || !h || isNaN(x) || isNaN(y)) continue;
 
     // Bounding box
-    ctx.strokeStyle = "#ededed";
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(14, 165, 233, 0.8)";
+    ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
 
-    // ID label
-    ctx.fillStyle = "rgba(237,237,237,0.95)";
-    ctx.fillRect(x, y - 12, 24, 12);
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 9px monospace";
-    ctx.fillText(`#${el.id}`, x + 2, y - 3);
+    // ID label background
+    const label = el.id != null ? `#${el.id}` : (el.redactionLabel || "");
+    if (label) {
+      const fontSize = Math.max(10, Math.min(14, canvasW / 80));
+      ctx.font = `bold ${fontSize}px monospace`;
+      const textW = ctx.measureText(label).width + 6;
+      ctx.fillStyle = "rgba(14, 165, 233, 0.85)";
+      ctx.fillRect(x, y - fontSize - 4, textW, fontSize + 4);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(label, x + 3, y - 4);
+    }
   }
 }
 
