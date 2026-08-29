@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LensAgent Guard</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- SIDEBAR (Fixed Width) -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-box">
+        <span class="material-symbols-outlined logo-icon">security</span>
+      </div>
+      <div>
+        <h2>LensAgent</h2>
+        <p>TERMINAL</p>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-tab="main">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+        Agent
+      </button>
+      <button class="nav-btn" data-tab="settings">
+        <span class="material-symbols-outlined">settings</span>
+        Settings
+      </button>
+      <button class="nav-btn" data-tab="history">
+        <span class="material-symbols-outlined">history</span>
+        History
+      </button>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="main-wrapper">
+    <!-- Atmospheric Glow -->
+    <div class="glow-orb"></div>
+
+    <!-- HEADER -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <!-- Status indicator (e.g. Good/Poor) can go here if needed -->
+      </div>
+      <div class="topbar-right">
+        <span id="connectionBadge" class="conn-badge">OFFLINE</span>
+        <span id="stateLabel" class="state-label">IDLE</span>
+      </div>
+    </header>
+
+    <main class="content-scroll">
+      
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: MAIN                                                          -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-main" class="tab-content active">
+        <!-- Page Context Header -->
+        <div class="page-context">
+          <h1>
+            LensAgent
+            <span class="status-dot-wrapper">
+              <span class="dot-ping"></span>
+              <span class="dot-core" id="statusDot"></span>
+            </span>
+          </h1>
+          <div class="badge-row">
+            <span class="badge-green">RUNNING</span>
+            <span class="badge-slate">ACTIVE</span>
+          </div>
+        </div>
+
+        <!-- Glassmorphic Controls -->
+        <div class="glass-panel">
+          <label for="goalInput">AGENT OBJECTIVE</label>
+          <div class="control-row">
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined input-icon">track_changes</span>
+              <input type="text" id="goalInput" placeholder="e.g. 'Search for train tickets to Mumbai on IRCTC'" spellcheck="false" autocomplete="off" />
+            </div>
+            <div class="btn-group">
+              <button id="stopBtn" class="btn-stop" disabled>
+                <span class="material-symbols-outlined text-sm">stop</span> Stop
+              </button>
+              <button id="startBtn" class="btn-start">
+                <span class="material-symbols-outlined text-sm">play_arrow</span> Start Agent
+              </button>
+            </div>
+          </div>
+          <p id="errorMsg" class="error-msg" hidden></p>
+        </div>
+
+        <!-- Live Security Audit (Bento Grid) -->
+        <div class="video-grid">
+          <!-- Raw Viewport -->
+          <div class="video-panel">
+            <div class="panel-overlay">
+              <span class="panel-title"><span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport</span>
+              <span class="live-tag"><span class="pulse-dot-red"></span> LIVE</span>
+            </div>
+            <canvas id="rawCanvas" width="640" height="360"></canvas>
+            <div class="scan-grid"></div>
+          </div>
+          
+          <!-- Sanitized Stream -->
+          <div class="video-panel safe-panel">
+            <div class="panel-overlay">
+              <span class="panel-title text-green"><span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream</span>
+              <span class="live-tag text-green"><span class="material-symbols-outlined text-sm pulse-icon">lock</span> SECURE</span>
+            </div>
+            <canvas id="redactedCanvas" width="640" height="360"></canvas>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <!-- Metrics Bento Bar -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span>REDACTIONS</span>
+            <strong id="redactionCount">0</strong>
+          </div>
+          <div class="metric-card">
+            <span>LATENCY</span>
+            <strong><span id="latencyDisplay">—</span><small>ms</small></strong>
+          </div>
+          <div class="metric-card">
+            <span>FPS</span>
+            <strong id="fpsDisplay">—</strong>
+          </div>
+          <div class="metric-card">
+            <span>FRAMES</span>
+            <strong id="frameCount">0</strong>
+          </div>
+          <div class="metric-card">
+            <span>Δ-SKIPPED</span>
+            <strong id="skippedCount">0</strong>
+          </div>
+          <div class="metric-card quality-card">
+            <div class="glow-bg"></div>
+            <span>QUALITY</span>
+            <strong><span id="qualityDisplay">—</span><small>%</small></strong>
+          </div>
+        </div>
+
+        <!-- Latency Sparkline (Hidden or placed here) -->
+        <div class="sparkline-wrapper" style="display: none;">
+           <canvas id="sparklineCanvas" width="660" height="40"></canvas>
+        </div>
+
+        <!-- Terminal Log -->
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <span>
+              <span class="material-symbols-outlined text-sm">terminal</span> Action Log
+              <span class="step-counter" style="margin-left: 10px; font-weight: bold; color: #0EA5E9;">Step <b id="stepCount">0</b>/<b id="maxSteps">30</b></span>
+            </span>
+            <button id="exportLogBtn">Export</button>
+          </div>
+          <div id="actionLog" class="terminal-body">
+            <div class="log-info">Waiting for agent to start...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: SETTINGS                                                      -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-settings" class="tab-content" style="display: none;">
+        <div class="page-context">
+          <h1>Settings</h1>
+          <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">Configure LensAgent core security and system parameters</p>
+        </div>
+        
+        <div class="settings-form glass-panel" style="margin-top: 20px;">
+          <div class="setting-group">
+            <label>Backend Server URL</label>
+            <input type="text" id="settBackendUrl" class="setting-input" />
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Max Steps</label>
+              <input type="number" id="settMaxSteps" class="setting-input" min="5" max="100" />
+            </div>
+            <div class="setting-group half">
+              <label>Capture Quality</label>
+              <input type="number" id="settCaptureQuality" class="setting-input" min="30" max="100" />
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Server Timeout (ms)</label>
+              <input type="number" id="settServerTimeout" class="setting-input" min="2000" max="30000" step="1000" />
+            </div>
+            <div class="setting-group half">
+              <label>Stabilize Delay (ms)</label>
+              <input type="number" id="settStabilizeDelay" class="setting-input" min="50" max="2000" step="50" />
+            </div>
+          </div>
+          <div class="setting-group mt-4">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settHumanize" /> Human-like input synthesis (jitter + delays)
+            </label>
+          </div>
+          <div class="setting-group mt-2">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settDeltaFrames" /> Delta-frame detection (skip unchanged frames)
+            </label>
+          </div>
+          <div class="setting-group mt-2">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settAuditStream" /> Live audit stream to popup
+            </label>
+          </div>
+          <div class="setting-actions">
+            <button id="saveSettingsBtn" class="btn-start" style="padding: 10px 20px;">Save Settings</button>
+            <button id="resetSettingsBtn" class="btn-stop" style="padding: 10px 20px;">Reset Defaults</button>
+          </div>
+          <p id="settingsMsg" class="settings-msg" hidden></p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: HISTORY                                                       -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-history" class="tab-content" style="display: none;">
+        <div class="page-context" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1>Session History</h1>
+            <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">Comprehensive logs of agent operations</p>
+          </div>
+          <button id="clearHistoryBtn" class="btn-stop" style="padding: 6px 16px;">Clear</button>
+        </div>
+        
+        <div id="historyList" class="history-list glass-panel" style="margin-top: 20px; min-height: 200px;">
+          <div class="history-empty" style="color: #94A3B8; text-align: center; padding: 40px; font-family: 'Fira Code', monospace; font-size: 12px;">No past sessions yet.</div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footerbar">
+      <span>v1.0.4 • <span style="color: #0EA5E9;">System Active</span></span>
+      <span id="dprDisplay"></span>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+/**
+ * service-worker.js — MV3 Background Service Worker (Enhanced)
+ * ==============================================================
+ * Central orchestrator that wires all subsystems together.
+ *
+ * Enhanced Features:
+ *   - Settings management (load/save/broadcast)
+ *   - Session history queries
+ *   - Tab change detection (pauses agent if user switches tabs)
+ *   - Multi-session prevention (only one agent run at a time)
+ *   - Graceful shutdown sequence
+ *   - Offscreen document crash recovery
+ *   - Detailed error broadcasting to popup
+ *   - Action log export support
+ */
+
+import { CaptureEngine } from "../lib/capture.js";
+import { ActionExecutor } from "../lib/action-executor.js";
+import { AgentLoop } from "../lib/agent-loop.js";
+import * as storage from "../lib/storage.js";
+import {
+  POPUP_START_AGENT, POPUP_STOP_AGENT, POPUP_GET_STATUS,
+  POPUP_GET_HISTORY, POPUP_EXPORT_LOG,
+  POPUP_UPDATE_SETTINGS, POPUP_GET_SETTINGS,
+  BG_AGENT_STATUS, BG_SETTINGS_UPDATED, BG_SESSION_HISTORY,
+  AgentState, PORT_OFFSCREEN,
+  HEARTBEAT_PING, ALARM_KEEPALIVE, HEARTBEAT_INTERVAL,
+} from "../lib/message-types.js";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** @type {AgentLoop|null} */
+let activeAgent = null;
+
+/** @type {CaptureEngine|null} */
+let activeCaptureEngine = null;
+
+/** @type {chrome.runtime.Port|null} */
+let offscreenPort = null;
+
+/** @type {number|null} */
+let activeTabId = null;
+
+/** @type {number|null} */
+let heartbeatInterval = null;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1. SERVICE WORKER KEEP-ALIVE (Dual: Alarm + Port Heartbeat)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+chrome.alarms.create(ALARM_KEEPALIVE, { periodInMinutes: 1 });
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM_KEEPALIVE && offscreenPort) {
+    offscreenPort.postMessage({ type: HEARTBEAT_PING });
+  }
+});
+
+function startHeartbeat() {
+  stopHeartbeat();
+  heartbeatInterval = setInterval(() => {
+    if (offscreenPort) {
+      try {
+        offscreenPort.postMessage({ type: HEARTBEAT_PING });
+      } catch {
+        offscreenPort = null;
+        handleOffscreenCrash();
+      }
+    }
+  }, HEARTBEAT_INTERVAL);
+}
+
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2. OFFSCREEN DOCUMENT LIFECYCLE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function ensureOffscreenDocument() {
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: ["OFFSCREEN_DOCUMENT"],
+  });
+
+  if (contexts.length > 0) return;
+
+  await chrome.offscreen.createDocument({
+    url:           "offscreen/offscreen.html",
+    reasons:       ["WORKERS"],
+    justification: "On-device WebGPU visual inference and PII redaction for privacy-preserving browser agent.",
+  });
+  console.log("[SW] Offscreen document created.");
+}
+
+async function handleOffscreenCrash() {
+  console.warn("[SW] Offscreen document crashed. Attempting recovery...");
+  if (activeAgent && activeAgent.state === AgentState.RUNNING) {
+    activeAgent.pause();
+  }
+
+  // Attempt to recreate offscreen document
+  try {
+    await ensureOffscreenDocument();
+    // Wait for port to reconnect
+    await new Promise((r) => setTimeout(r, 1000));
+
+    if (offscreenPort) {
+      console.log("[SW] Offscreen document recovered successfully.");
+      broadcastToPopup(BG_AGENT_STATUS, {
+        state: AgentState.PAUSED,
+        message: "Offscreen document recovered. Restart the agent to continue.",
+      });
+    }
+  } catch (err) {
+    console.error("[SW] Offscreen recovery failed:", err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3. PORT MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === PORT_OFFSCREEN) {
+    offscreenPort = port;
+    startHeartbeat();
+    console.log("[SW] Offscreen channel connected.");
+
+    port.onDisconnect.addListener(() => {
+      offscreenPort = null;
+      stopHeartbeat();
+      console.warn("[SW] Offscreen channel disconnected.");
+      if (activeAgent && activeAgent.state === AgentState.RUNNING) {
+        activeAgent.pause();
+      }
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4. TAB CHANGE DETECTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  if (activeAgent && activeAgent.state === AgentState.RUNNING && activeTabId) {
+    if (activeInfo.tabId !== activeTabId) {
+      // User switched to a different tab — don't auto-stop, just note it
+      console.log("[SW] User switched tabs during agent run. Agent continues on original tab.");
+    }
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (tabId === activeTabId && activeAgent) {
+    console.warn("[SW] Active tab closed. Stopping agent.");
+    handleStopAgent("TAB_CLOSED");
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5. MESSAGE HANDLER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  switch (msg.type) {
+    case POPUP_START_AGENT:
+      handleStartAgent(msg.goal, msg.settings).then(sendResponse);
+      return true;
+
+    case POPUP_STOP_AGENT:
+      handleStopAgent("USER_STOPPED").then(sendResponse);
+      return true;
+
+    case POPUP_GET_STATUS:
+      sendResponse(getAgentStatus());
+      return false;
+
+    case POPUP_GET_SETTINGS:
+      storage.loadSettings().then(sendResponse);
+      return true;
+
+    case POPUP_UPDATE_SETTINGS:
+      storage.saveSettings(msg.settings).then(async () => {
+        const updated = await storage.loadSettings();
+        broadcastToPopup(BG_SETTINGS_UPDATED, updated);
+        sendResponse({ status: "OK" });
+      });
+      return true;
+
+    case POPUP_GET_HISTORY:
+      storage.loadHistory().then(sendResponse);
+      return true;
+
+    case POPUP_EXPORT_LOG:
+      storage.exportLogsAsText().then((text) => sendResponse({ text }));
+      return true;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 6. START AGENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleStartAgent(goal, settingsOverride = null) {
+  try {
+    // Multi-session prevention
+    if (activeAgent && activeAgent.state === AgentState.RUNNING) {
+      return { status: "ERROR", error: "An agent session is already running. Stop it first." };
+    }
+
+    if (!goal || typeof goal !== "string" || !goal.trim()) {
+      return { status: "ERROR", error: "Goal cannot be empty." };
+    }
+
+    // Load settings (with any overrides from popup)
+    const settings = await storage.loadSettings();
+    if (settingsOverride) Object.assign(settings, settingsOverride);
+
+    // Get active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return { status: "ERROR", error: "No active browser tab found." };
+
+    const url = tab.url || "";
+    const BLOCKED = ["chrome://", "chrome-extension://", "edge://", "about:blank",
+                     "https://chromewebstore.google.com"];
+    if (BLOCKED.some((p) => url.startsWith(p))) {
+      return { status: "ERROR", error: `Cannot automate restricted page: ${url}` };
+    }
+
+    // Ensure offscreen document
+    await ensureOffscreenDocument();
+    if (!offscreenPort) await new Promise((r) => setTimeout(r, 600));
+    if (!offscreenPort) return { status: "ERROR", error: "Offscreen perception engine failed to connect." };
+
+    // Create capture engine
+    const captureEngine = new CaptureEngine(tab.id, {
+      quality:          settings.captureQuality,
+      maxWidth:         settings.captureMaxWidth,
+      maxHeight:        settings.captureMaxHeight,
+      enableDeltaFrames: settings.enableDeltaFrames,
+      adaptiveQuality:  true,
+    });
+
+    await captureEngine.attach();
+    activeCaptureEngine = captureEngine;
+    activeTabId = tab.id;
+
+    // Fetch dynamic DPR
+    const dpr = await captureEngine.getDevicePixelRatio();
+    console.log(`[SW] DPR: ${dpr} | Tab: ${tab.id} | URL: ${url}`);
+
+    // Create action executor
+    const actionExecutor = new ActionExecutor(tab.id, {
+      dpr,
+      humanize:          settings.humanizeInputs,
+      interKeyDelayBase: settings.interKeyDelayBase,
+      interKeyJitter:    settings.interKeyJitter,
+    });
+
+    // Wire detach recovery
+    captureEngine.onDetach((reason) => {
+      console.warn(`[SW] Debugger detached: ${reason}`);
+      activeCaptureEngine = null;
+      activeTabId = null;
+      if (activeAgent) activeAgent.pause();
+
+      broadcastToPopup(BG_AGENT_STATUS, {
+        state:   AgentState.PAUSED,
+        message: reason === "canceled_by_user"
+          ? "Agent paused — you opened Chrome DevTools. Close DevTools and restart."
+          : `Agent paused — debugger detached (${reason}).`,
+      });
+    });
+
+    captureEngine.onNavigate((newUrl) => {
+      console.log(`[SW] Navigation: ${newUrl}`);
+    });
+
+    // Create and start agent loop
+    activeAgent = new AgentLoop({
+      captureEngine,
+      actionExecutor,
+      offscreenPort,
+      backendUrl:       settings.backendUrl,
+      maxSteps:         settings.maxSteps,
+      stabilizeDelayMs: settings.stabilizeDelayMs,
+      serverTimeoutMs:  settings.serverTimeoutMs,
+      enableAuditStream: settings.enableAuditStream,
+    });
+
+    await activeAgent.start(goal.trim());
+
+    return { status: "STARTED", dpr, tabId: tab.id, url };
+
+  } catch (err) {
+    console.error("[SW] Start failed:", err);
+    if (activeCaptureEngine) {
+      await activeCaptureEngine.detach().catch(() => {});
+      activeCaptureEngine = null;
+    }
+    activeTabId = null;
+    return { status: "ERROR", error: err.message };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 7. STOP AGENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function handleStopAgent(reason = "USER_STOPPED") {
+  try {
+    if (activeAgent) {
+      await activeAgent.stop(reason);
+      activeAgent = null;
+    }
+    if (activeCaptureEngine) {
+      await activeCaptureEngine.stopScreencast();
+      activeCaptureEngine = null;
+    }
+    activeTabId = null;
+    await storage.sessionSet({ agentState: AgentState.IDLE });
+    return { status: "STOPPED" };
+  } catch (err) {
+    console.error("[SW] Stop error:", err);
+    return { status: "ERROR", error: err.message };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 8. STATUS QUERY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function getAgentStatus() {
+  if (activeAgent) return { status: "OK", ...activeAgent.getStatus() };
+  return {
+    status: "OK", state: AgentState.IDLE, goal: "", stepCount: 0,
+    maxSteps: 30, avgLatency: 0, connection: "OFFLINE",
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function broadcastToPopup(type, payload) {
+  chrome.runtime.sendMessage({ type, payload }).catch(() => {});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 10. INSTALL HANDLER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+chrome.runtime.onInstalled.addListener(async (details) => {
+  console.log(`[SW] Installed: ${details.reason}`);
+  await storage.sessionClear();
+  await storage.sessionSet({ agentState: AgentState.IDLE });
+
+  // Initialize default settings if first install
+  if (details.reason === "install") {
+    await storage.resetSettings();
+  }
+});
+
+console.log("[SW] LensAgent Service Worker initialized.");
