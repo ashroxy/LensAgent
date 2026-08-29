@@ -167,9 +167,9 @@ const port = chrome.runtime.connect({ name: PORT_OFFSCREEN });
 port.onMessage.addListener(async (msg) => {
   switch (msg.type) {
     case BG_PROCESS_FRAME: {
-      const { correlationId, rawBase64, buffer } = msg;
+      const { correlationId, rawBase64, buffer, piiBoxes, dpr } = msg;
       try {
-        const result = await processFrame(rawBase64, buffer);
+        const result = await processFrame(rawBase64, buffer, piiBoxes || [], dpr || 1.0);
         port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result });
       } catch (err) {
         console.error("[Offscreen] Frame error:", err);
@@ -194,7 +194,7 @@ port.postMessage({ type: OS_READY, gpuStatus });
 // FRAME PROCESSING PIPELINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-async function processFrame(rawBase64, buffer) {
+async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   const t0 = performance.now();
   frameCount++;
 
@@ -212,7 +212,8 @@ async function processFrame(rawBase64, buffer) {
   const tRedact = performance.now();
   const { sanitizedImage, tokenMap } = await privacyEngine.sanitizeViewport(
     rawBase64,
-    elements
+    [...elements, ...piiBoxes],
+    dpr
   );
   const redactMs = performance.now() - tRedact;
 
