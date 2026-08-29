@@ -102,6 +102,13 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 // CONTROLS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const btnPopout = document.getElementById("btnPopout");
+if (btnPopout) {
+  btnPopout.addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html") });
+  });
+}
+
 startBtn.addEventListener("click", async () => {
   const goal = goalInput.value.trim();
   if (!goal) { showError("Please enter a goal."); return; }
