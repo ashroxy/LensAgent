@@ -101,20 +101,30 @@
         <!-- Live Security Audit (Bento Grid) -->
         <div class="video-grid">
           <!-- Raw Viewport -->
-          <div class="video-panel">
+          <div class="video-panel" data-stream="raw">
             <div class="panel-overlay">
               <span class="panel-title"><span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport</span>
-              <span class="live-tag"><span class="pulse-dot-red"></span> LIVE</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="live-tag"><span class="pulse-dot-red"></span> LIVE</span>
+                <button class="expand-btn" data-target="raw" title="Expand to fullscreen">
+                  <span class="material-symbols-outlined">fullscreen</span>
+                </button>
+              </div>
             </div>
             <canvas id="rawCanvas" width="640" height="360"></canvas>
             <div class="scan-grid"></div>
           </div>
           
           <!-- Sanitized Stream -->
-          <div class="video-panel safe-panel">
+          <div class="video-panel safe-panel" data-stream="sanitized">
             <div class="panel-overlay">
               <span class="panel-title text-green"><span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream</span>
-              <span class="live-tag text-green"><span class="material-symbols-outlined text-sm pulse-icon">lock</span> SECURE</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="live-tag text-green"><span class="material-symbols-outlined text-sm pulse-icon">lock</span> SECURE</span>
+                <button class="expand-btn" data-target="sanitized" title="Expand to fullscreen">
+                  <span class="material-symbols-outlined">fullscreen</span>
+                </button>
+              </div>
             </div>
             <canvas id="redactedCanvas" width="640" height="360"></canvas>
             <div class="scan-line"></div>
@@ -234,13 +244,16 @@
         <div class="page-context" style="display: flex; justify-content: space-between; align-items: center;">
           <div>
             <h1>Session History</h1>
-            <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">Comprehensive logs of agent operations</p>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Previous agent sessions and their outcomes</p>
           </div>
           <button id="clearHistoryBtn" class="btn-stop" style="padding: 6px 16px;">Clear</button>
         </div>
         
-        <div id="historyList" class="history-list glass-panel" style="margin-top: 20px; min-height: 200px;">
-          <div class="history-empty" style="color: #94A3B8; text-align: center; padding: 40px; font-family: 'Fira Code', monospace; font-size: 12px;">No past sessions yet.</div>
+        <div id="historyList" class="history-list" style="margin-top: 16px;">
+          <div class="history-empty">
+            <span class="material-symbols-outlined">inbox</span>
+            No past sessions yet. Start your first agent task.
+          </div>
         </div>
       </section>
 
@@ -251,6 +264,17 @@
       <span>v1.0.4 • <span style="color: #0EA5E9;">System Active</span></span>
       <span id="dprDisplay"></span>
     </footer>
+  </div>
+
+  <!-- FULLSCREEN VIDEO MODAL -->
+  <div id="videoModal" class="video-modal" hidden>
+    <div class="video-modal-header">
+      <span id="modalTitle" class="panel-title"></span>
+      <button id="modalClose" class="modal-close-btn" title="Close (Esc)">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <canvas id="modalCanvas" class="modal-canvas"></canvas>
   </div>
 
   <script type="module" src="popup.js"></script>

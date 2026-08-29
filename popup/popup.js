@@ -465,7 +465,11 @@ async function loadHistoryUI() {
   historyList.innerHTML = "";
 
   if (!history || history.length === 0) {
-    historyList.innerHTML = '<div class="history-empty">No past sessions yet.</div>';
+    historyList.innerHTML = `
+      <div class="history-empty">
+        <span class="material-symbols-outlined">inbox</span>
+        No past sessions yet. Start your first agent task.
+      </div>`;
     return;
   }
 
@@ -474,27 +478,48 @@ async function loadHistoryUI() {
     card.className = "history-card";
 
     const dur = entry.durationMs
-      ? `${Math.round(entry.durationMs / 1000)}s`
-      : "—";
+      ? formatDuration(entry.durationMs)
+      : "--";
+
+    const result = entry.result || "UNKNOWN";
+    const resultIcon = result.includes("FINISHED") || result.includes("ACHIEVED") ? "check_circle"
+                     : result.includes("STOP") ? "pause_circle"
+                     : "error";
+
+    const dateStr = entry.date || new Date(entry.timestamp || Date.now()).toLocaleString("en-IN", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    });
 
     card.innerHTML = `
-      <div class="hc-goal">${escapeHtml(entry.goal || "N/A")}</div>
+      <div class="hc-goal">${escapeHtml(entry.goal || "Untitled Task")}</div>
       <div class="hc-meta">
-        <span class="hc-result ${entry.result}">${entry.result}</span>
-        <span>${entry.steps || 0} steps</span>
-        <span>${dur}</span>
-        <span>${entry.date || ""}</span>
+        <span class="hc-result ${result}">${result}</span>
+        <span><span class="material-symbols-outlined">footprint</span> ${entry.steps || 0} steps</span>
+        <span><span class="material-symbols-outlined">timer</span> ${dur}</span>
+        <span><span class="material-symbols-outlined">schedule</span> ${dateStr}</span>
       </div>
     `;
     historyList.appendChild(card);
   }
 }
 
+function formatDuration(ms) {
+  if (ms < 1000) return `${ms}ms`;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}m ${rem}s`;
+}
+
 clearHistoryBtn.addEventListener("click", async () => {
-  await msg({ type: POPUP_UPDATE_SETTINGS, settings: {} }); // Trigger a round-trip
-  // Directly clear via storage message — would need a CLEAR_HISTORY message type
-  // For now, reload empty
-  historyList.innerHTML = '<div class="history-empty">History cleared.</div>';
+  await msg({ type: POPUP_UPDATE_SETTINGS, settings: {} });
+  historyList.innerHTML = `
+    <div class="history-empty">
+      <span class="material-symbols-outlined">inbox</span>
+      History cleared.
+    </div>`;
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -510,6 +535,69 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FULLSCREEN VIDEO MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const videoModal    = $("videoModal");
+const modalCanvas   = $("modalCanvas");
+const modalCtx      = modalCanvas.getContext("2d");
+const modalTitle    = $("modalTitle");
+const modalCloseBtn = $("modalClose");
+let activeModalStream = null;
+let modalAnimFrame    = null;
+
+document.querySelectorAll(".expand-btn").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const target = btn.dataset.target;
+    activeModalStream = target;
+
+    if (target === "raw") {
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport — Fullscreen';
+      modalTitle.className = "panel-title";
+    } else {
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream — Fullscreen';
+      modalTitle.className = "panel-title text-green";
+    }
+
+    videoModal.hidden = false;
+    mirrorToModal();
+  });
+});
+
+function mirrorToModal() {
+  if (!activeModalStream || videoModal.hidden) {
+    modalAnimFrame = null;
+    return;
+  }
+
+  const src = activeModalStream === "raw" ? rawCanvas : redactedCanvas;
+
+  // Match modal canvas resolution to source
+  if (modalCanvas.width !== src.width || modalCanvas.height !== src.height) {
+    modalCanvas.width  = src.width;
+    modalCanvas.height = src.height;
+  }
+
+  modalCtx.drawImage(src, 0, 0);
+  modalAnimFrame = requestAnimationFrame(mirrorToModal);
+}
+
+function closeModal() {
+  videoModal.hidden = true;
+  activeModalStream = null;
+  if (modalAnimFrame) {
+    cancelAnimationFrame(modalAnimFrame);
+    modalAnimFrame = null;
+  }
+}
+
+modalCloseBtn.addEventListener("click", closeModal);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !videoModal.hidden) closeModal();
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INIT: Sync state on popup open
