@@ -381,4 +381,16 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 - Created offscreen document with clearly marked integration points for Member 2 (WebGPU Vision) and Member 3 (Privacy Engine)
 - Defined integration contract: exact message types, payload shapes, and function signatures for teammate modules
 
+### 2026-08-30 v5.2 — Member 3 Privacy Engine Integration
+- **Integrated `offscreen/privacy_engine.js`** (Member 3): Real PII detection and canvas redaction replacing the mock stub. Handles Aadhaar, PAN, Indian phone, credit card, email, UPI, passport, driving licence, PERSON NER, and ISRO/DRDO CONFIDENTIAL NER patterns.
+- **Integrated `offscreen/vault_manager.js`** (Member 3, `SessionVaultManager`): Session-scoped in-RAM bidirectional tokenizer. Converts observed page PII to `[SYS_PAN_01]` aliases before the LLM sees them. Distinct from user identity `lib/vault.js` (`<VAULT_EMAIL>` tokens).
+- **Integrated `offscreen/accessibility_sanitizer.js`** (Member 3): Sanitizes AX tree node names/values/descriptions — fully redacts password/secure fields, and replaces PII regex matches with `[REDACTED_*]` tokens.
+- **Integrated `offscreen/accessibility_walker.js`** (Member 3): Shadow DOM-aware accessibility tree builder for CDP `Runtime.evaluate` page injection.
+- **Privacy Gate in `lib/agent-loop.js`**: AX tree is now sanitized via `AccessibilitySanitizer.sanitizeTree()` before the server payload is sent — the final PII defence before data leaves the browser.
+- **Context-Aware Confidence Scoring**: False positive suppression using ±50 character context windows and domain-specific positive/negative keyword dictionaries.
+- **Zero-Leakage Payload Validator**: `validatePayload()` throws on any residual unmasked PII in strict mode (fail-closed).
+- Fixed ES module compatibility (`export class`) across all Member 3 files.
+
+
+
 

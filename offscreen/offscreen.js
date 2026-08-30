@@ -338,45 +338,7 @@ function extractStructuralElements(context, width, height) {
   ];
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MOCK: PII DETECTION & CANVAS REDACTION (Member 3 replaces this)
-// ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Detects Personally Identifiable Information (PII) and draws black redaction 
- * rectangles directly onto the canvas.
- * 
- * @param {CanvasRenderingContext2D} context - The canvas context to sanitize
- * @param {number} width - Canvas width in physical pixels
- * @param {number} height - Canvas height in physical pixels
- * @returns {import('../lib/message-types.js').BoundingBox[]} Regions that were redacted
- */
-function detectAndRedactPII(context, width, height) {
-  // Production:
-  //   1. Extract text via local OCR or CDP DOM tree traversal
-  //   2. Run regex for Aadhaar (12-digit), PAN (ABCDE1234F), phone, credit card
-  //   3. Run local NER model (quantized DistilBERT) for PERSON, LOC, ORG
-  //   4. Map text nodes → canvas bounding boxes
-  //   5. Paint solid black rectangles over PII
-
-  const mockRegions = [
-    { type: "AADHAAR_NUMBER",   bbox: [280, 380, 240, 30] },
-    { type: "PAN_NUMBER",       bbox: [280, 430, 180, 30] },
-    { type: "PHONE_NUMBER",     bbox: [280, 480, 160, 30] },
-    { type: "EMAIL_ADDRESS",    bbox: [280, 520, 220, 30] },
-  ];
-
-  for (const r of mockRegions) {
-    const [x, y, w, h] = r.bbox;
-    context.fillStyle = "#000000";
-    context.fillRect(x, y, w, h);
-    context.fillStyle = "#FF0000";
-    context.font = "bold 9px monospace";
-    context.fillText(`[${r.type}]`, x + 3, y + 18);
-  }
-
-  return mockRegions;
-}
 
 /**
  * @returns {import('../lib/message-types.js').PerceptionResult} Empty fallback payload
@@ -390,4 +352,4 @@ function fallbackResult() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 initWebGPU();
-console.log("[Offscreen] Perception engine initialized (mock mode).");
+console.log("[Offscreen] Perception engine initialized — Member 3 PrivacyEngine active (real PII redaction).");
