@@ -165,14 +165,15 @@ async function getCachedModel(url) {
 let port = null;
 
 function connectPort() {
-  if (!chrome.runtime?.id) {
-    console.log("[Offscreen] Extension context invalidated (likely reloaded). Self-destructing...");
+  try {
+    // This will throw if the extension context is invalidated (e.g. extension was reloaded)
+    if (!chrome.runtime || !chrome.runtime.id) {
+      console.warn("[Offscreen] chrome.runtime unavailable.");
+      return;
+    }
+  } catch (e) {
+    console.log("[Offscreen] Extension context invalidated. Self-destructing...");
     window.close();
-    return;
-  }
-
-  if (!chrome.runtime?.connect) {
-    console.warn("[Offscreen] chrome.runtime.connect is unavailable.");
     return;
   }
 

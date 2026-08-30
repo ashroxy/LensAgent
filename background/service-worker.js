@@ -112,6 +112,8 @@ async function ensureOffscreenDocument() {
     console.log("[SW] Cleaning up stale offscreen document...");
     try {
       await chrome.offscreen.closeDocument();
+      // Give Chrome a moment to fully tear down the old document context
+      await new Promise(r => setTimeout(r, 250));
     } catch (e) {
       console.warn("[SW] Failed closing stale offscreen doc:", e);
     }
