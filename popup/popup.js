@@ -495,7 +495,7 @@ saveSettingsBtn.addEventListener("click", async () => {
   // Helper: parse a numeric field into a finite clamped integer within [min,max].
   // Returns fallback if raw is empty/blank; otherwise clamps to [min,max].
   const clampInt = (raw, min, max, fallback) => {
-    if (raw === null || raw === undefined || raw.trim() === '') return fallback;
+    if (raw === null || raw === undefined) return fallback; if (typeof raw === 'string' && raw.trim() === '') return fallback;
     const n = Math.round(Number(raw));
     if (!Number.isFinite(n)) return fallback;
     return Math.min(max, Math.max(min, n));
