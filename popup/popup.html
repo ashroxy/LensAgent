@@ -57,10 +57,11 @@
         </header>
 
         <!-- Tab Content Wrapper -->
-        <main class="flex-1 overflow-y-auto relative p-6 pb-10">
+        <div id="errorMsg" class="fixed top-4 left-1/2 -translate-x-1/2 bg-error text-on-error px-4 py-2 rounded-xl shadow-lg z-[100] text-sm font-bold opacity-0 transition-opacity pointer-events-none" hidden></div>
+<main class="flex-1 overflow-y-auto relative p-6 pb-10">
             
             <!-- AGENT TAB -->
-            <section id="tab-agent" class="tab-content active flex-col gap-6">
+            <section id="tab-agent" class="tab-content active flex-col gap-6 overflow-y-auto pr-2">
                 <!-- Top Row -->
                 <div class="flex gap-4 items-end">
                     <div class="flex-1">
@@ -146,7 +147,7 @@
             </section>
 
             <!-- SETTINGS TAB -->
-            <section id="tab-settings" class="tab-content flex-col gap-6">
+            <section id="tab-settings" class="tab-content flex-col gap-6 overflow-y-auto pr-2">
                 <div class="neu-extruded rounded-2xl p-6">
                     <h3 class="font-headline-md text-[14px] text-on-surface mb-4 border-b border-outline-variant/30 pb-3">Connection</h3>
                     <div class="grid grid-cols-2 gap-4">
@@ -198,6 +199,7 @@
                     </div>
                 </div>
 
+                <span id="settingsMsg" class="text-[11px] text-tertiary font-bold self-end" hidden></span>
                 <div class="flex justify-end gap-4 mt-2">
                     <button id="resetSettingsBtn" class="px-6 py-2 rounded-xl neu-btn text-on-surface font-label-md text-[12px] uppercase">Reset</button>
                     <button id="saveSettingsBtn" class="px-6 py-2 rounded-xl neu-btn-primary text-primary font-label-md text-[12px] uppercase">Save Changes</button>
@@ -205,7 +207,7 @@
             </section>
 
             <!-- HISTORY TAB -->
-            <section id="tab-history" class="tab-content flex-col h-full">
+            <section id="tab-history" class="tab-content flex-col h-full overflow-y-auto pr-2">
                 <div class="flex justify-between items-center mb-4 shrink-0">
                     <p class="font-body-md text-on-surface-variant text-[13px]">Review past sessions.</p>
                     <button id="clearHistoryBtn" class="px-4 py-2 rounded-lg neu-btn text-error font-label-md text-[11px] uppercase flex items-center gap-2">
@@ -223,13 +225,13 @@
             </section>
 
             <!-- VAULT TAB -->
-            <section id="tab-vault" class="tab-content flex-col gap-6">
+            <section id="tab-vault" class="tab-content flex-col gap-6 overflow-y-auto pr-2">
                 <div class="neu-extruded rounded-2xl p-6 flex flex-col">
                     <div class="flex justify-between items-start border-b border-outline-variant/20 pb-4 mb-4">
                         <div>
                             <h2 class="font-headline-md text-[14px] text-on-surface flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-[20px]">encrypted</span> Identity Vault
-                            </h2>
+<span class="material-symbols-outlined text-primary text-[20px]">encrypted</span> Identity Vault <span id="vaultFilledCount" class="text-[12px] bg-primary text-on-primary px-2 py-0.5 rounded-full">0</span>
+</h2>
                             <p class="text-[11px] text-on-surface-variant mt-1">Secure local storage for PII form injection.</p>
                         </div>
                     </div>

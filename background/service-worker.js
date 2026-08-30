@@ -116,7 +116,7 @@ async function ensureOffscreenDocument() {
     try {
       await chrome.offscreen.createDocument({
         url:           "offscreen/offscreen.html",
-        reasons:       ["WORKERS"],
+        reasons: ["DOM_PARSER", "WORKERS"],
         justification: "On-device WebGPU visual inference and PII redaction for privacy-preserving browser agent.",
       });
       console.log("[SW] Fresh offscreen document created.");
@@ -459,4 +459,5 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 console.log("[SW] LensAgent Service Worker initialized.");
+
 

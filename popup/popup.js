@@ -389,7 +389,7 @@ function handleStatusUpdate(p) {
   if (p.stepCount != null) if (stepCountEl) stepCountEl.textContent = p.stepCount;
   if (p.maxSteps != null)  if (maxStepsEl) maxStepsEl.textContent  = p.maxSteps;
   if (p.avgLatency != null) {
-    latencyDisplayEl.textContent = `${p.avgLatency}ms`;
+    latencyDisplayEl.textContent = `${p.avgLatency}`;
     updateSparkline(p.avgLatency);
   }
   if (p.metrics) {
@@ -468,8 +468,8 @@ function resetToIdle() {
   if (hitlOverlay) hitlOverlay.hidden = true;
   if (approvalOverlay) approvalOverlay.hidden = true;
 }
-function showError(t) { if (errorMsg) errorMsg.textContent = t; if (errorMsg) errorMsg.hidden = false; }
-function hideError()   { if (errorMsg) errorMsg.hidden = true; }
+function showError(t) { if (errorMsg) { errorMsg.textContent = t; errorMsg.hidden = false; setTimeout(() => { errorMsg.classList.remove("opacity-0"); errorMsg.classList.add("opacity-100"); }, 10); } }
+function hideError() { if (errorMsg) { errorMsg.classList.remove("opacity-100"); errorMsg.classList.add("opacity-0"); setTimeout(() => { errorMsg.hidden = true; }, 300); } }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SETTINGS
@@ -514,9 +514,9 @@ saveSettingsBtn.addEventListener("click", async () => {
   if (settCaptureQuality) settCaptureQuality.value = settings.captureQuality;
   settServerTimeout.value  = settings.serverTimeoutMs;
   if (settStabilizeDelay) settStabilizeDelay.value = settings.stabilizeDelayMs;
-  settingsMsg.textContent = "âœ… Settings saved.";
-  settingsMsg.hidden = false;
-  setTimeout(() => { settingsMsg.hidden = true; }, 2000);
+  if (settingsMsg) settingsMsg.textContent = "✅ Settings saved.";
+  if (settingsMsg) settingsMsg.hidden = false;
+  setTimeout(() => { if (settingsMsg) settingsMsg.hidden = true; }, 2000);
 });
 
 resetSettingsBtn.addEventListener("click", async () => {
@@ -617,10 +617,10 @@ document.querySelectorAll(".expand-btn").forEach((btn) => {
     activeModalStream = target;
 
     if (target === "raw") {
-      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport â€” Fullscreen';
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport - Fullscreen';
       modalTitle.className = "panel-title";
     } else {
-      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream â€” Fullscreen';
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream - Fullscreen';
       modalTitle.className = "panel-title text-green";
     }
 
@@ -937,5 +937,6 @@ const flushVaultBtn = document.getElementById('clearVaultBtn');
 if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
 if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
 loadVaultUI();
+
 
 

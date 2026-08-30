@@ -1,5 +1,5 @@
 /**
- * offscreen.js — Perception & Redaction Engine (Offscreen Document)
+ * offscreen.js â€” Perception & Redaction Engine (Offscreen Document)
  * ==================================================================
  * Runs inside MV3 Offscreen Document with full DOM, Canvas 2D, and WebGPU access.
  *
@@ -13,8 +13,8 @@
  *
  * INTEGRATION BOUNDARY:
  *   Member 1 (you): Port communication, frame decoding, response formatting, caching
- *   Member 2 (teammate): extractStructuralElements() → real ONNX/WebGPU inference
- *   Member 3 (teammate): detectAndRedactPII() → real PII detection + NER + canvas redaction
+ *   Member 2 (teammate): extractStructuralElements() â†’ real ONNX/WebGPU inference
+ *   Member 3 (teammate): detectAndRedactPII() â†’ real PII detection + NER + canvas redaction
  */
 
 import {
@@ -25,17 +25,17 @@ import {
 } from "../lib/message-types.js";
 import { PrivacyEngine } from './privacy_engine.js';
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TEAM INTEGRATION (Member 3)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const privacyEngine = new PrivacyEngine({
   enableStrictZeroLeakage: true
 });
 
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CANVAS SETUP
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const canvas = document.getElementById("inferenceCanvas");
 const ctx    = canvas.getContext("2d", { willReadFrequently: true });
@@ -44,9 +44,9 @@ const ctx    = canvas.getContext("2d", { willReadFrequently: true });
 const offscreenExportCanvas = new OffscreenCanvas(1280, 720);
 const offscreenExportCtx    = offscreenExportCanvas.getContext("2d");
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // WEBGPU INITIALIZATION
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let gpuDevice   = null;
 let gpuStatus   = WebGPUStatus.INITIALIZING;
@@ -64,7 +64,7 @@ let perfAccum = {
 
 async function initWebGPU() {
   if (!navigator.gpu) {
-    console.warn("[Offscreen] WebGPU not available — falling back to Canvas 2D.");
+    console.warn("[Offscreen] WebGPU not available â€” falling back to Canvas 2D.");
     gpuStatus = WebGPUStatus.UNAVAILABLE;
     reportGPUStatus();
     return false;
@@ -125,9 +125,9 @@ async function warmUpInference() {
   console.log("[Offscreen] Warm-up inference pass complete.");
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MODEL CACHE (Cache API)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const MODEL_CACHE_NAME = "lensagent-models-v1";
 
@@ -158,25 +158,13 @@ async function getCachedModel(url) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // PORT CONNECTION & AUTO-RECONNECT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let port = null;
 
 function connectPort() {
-  try {
-    // This will throw if the extension context is invalidated (e.g. extension was reloaded)
-    if (!chrome.runtime || !chrome.runtime.id) {
-      console.warn("[Offscreen] chrome.runtime unavailable.");
-      return;
-    }
-  } catch (e) {
-    console.log("[Offscreen] Extension context invalidated. Self-destructing...");
-    window.close();
-    return;
-  }
-
   try {
     port = chrome.runtime.connect({ name: PORT_OFFSCREEN });
 
@@ -220,9 +208,9 @@ function reportGPUStatus() {
   if (port) port.postMessage({ type: OS_WEBGPU_STATUS, status: gpuStatus });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // FRAME PROCESSING PIPELINE
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   const t0 = performance.now();
@@ -281,7 +269,7 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
 }
 
 /**
- * Set-of-Mark (SoM) Prompting — Microsoft Research (arXiv:2310.11441)
+ * Set-of-Mark (SoM) Prompting â€” Microsoft Research (arXiv:2310.11441)
  * ====================================================================
  * Annotates each detected UI element with a numbered SoM ID so the
  * AI model can reference elements by ID ("Click element 3") instead of
@@ -329,7 +317,7 @@ async function exportCanvasAsBase64() {
   try {
     const blob = await offscreenExportCanvas.convertToBlob({ type: "image/jpeg", quality: 0.75 });
     const buffer = await blob.arrayBuffer();
-    // Convert ArrayBuffer → base64
+    // Convert ArrayBuffer â†’ base64
     const bytes = new Uint8Array(buffer);
     let binary = "";
     for (let i = 0; i < bytes.length; i++) {
@@ -342,9 +330,9 @@ async function exportCanvasAsBase64() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MOCK: STRUCTURAL ELEMENT DETECTION (Member 2 replaces this)
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
  * Extracts interactable UI elements from the viewport using the ONNX model.
@@ -377,9 +365,10 @@ function fallbackResult() {
   return { elements: [], redactedRegions: [], rawImageBase64: "", redactedImageBase64: "" };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INIT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 initWebGPU();
-console.log("[Offscreen] Perception engine initialized — Member 3 PrivacyEngine active (real PII redaction).");
+console.log("[Offscreen] Perception engine initialized â€” Member 3 PrivacyEngine active (real PII redaction).");
+
