@@ -687,7 +687,7 @@ const VAULT_FIELDS = [
   { key: 'address',   label: 'Address',    placeholder: '123 Main Street', type: 'text' },
   { key: 'city',      label: 'City',       placeholder: 'Mumbai', type: 'text' },
   { key: 'state',     label: 'State',      placeholder: 'Maharashtra', type: 'text' },
-  { key: 'pincode',   label: 'Pincode',    placeholder: '400001', type: 'text' },
+  { key: 'pincode', label: 'Pincode', placeholder: '400001', type: 'number' },
   { key: 'dob',       label: 'Date of Birth', placeholder: '', type: 'date' },
   { key: 'gender',    label: 'Gender',     placeholder: 'Select Gender', type: 'select' },
 ];
@@ -724,6 +724,11 @@ async function loadVaultUI() {
       
       input.id = `vault_${field.key}`;
       input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none";
+    if (field.key === 'pincode' || field.type === 'tel') {
+      input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9+\-\s]/g, '');
+      });
+    }
       
       inner.appendChild(input);
       wrapper.appendChild(label);
@@ -732,6 +737,7 @@ async function loadVaultUI() {
     }
   }
   populateVaultUI(data || {});
+}
 
 
 function populateVaultUI(vaultData) {
@@ -809,18 +815,13 @@ function showVaultMsg(text, type = 'info') {
 
 }
 
-// Wire vault buttons
-const saveVaultBtn = document.getElementById('saveVaultBtn');
-const flushVaultBtn = document.getElementById('clearVaultBtn');
-if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
-if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
   
   // Wire individual delete buttons
   for (const field of VAULT_FIELDS) {
     const delBtn = document.getElementById(`vaultDel_${field.key}`);
     if (delBtn) delBtn.addEventListener('click', () => deleteVaultField(field.key));
   }
-});
+
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HITL (HUMAN-IN-THE-LOOP) CHAT
@@ -916,7 +917,6 @@ if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprova
 
 
 
-}
 
 
 
@@ -926,5 +926,16 @@ if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprova
 
 
 
+
+
+
+
+
+// Wire vault buttons
+const saveVaultBtn = document.getElementById('saveVaultBtn');
+const flushVaultBtn = document.getElementById('clearVaultBtn');
+if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
+if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
+loadVaultUI();
 
 
