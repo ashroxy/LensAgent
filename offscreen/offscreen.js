@@ -159,40 +159,59 @@ async function getCachedModel(url) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PORT CONNECTION
+// PORT CONNECTION & AUTO-RECONNECT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const port = chrome.runtime?.connect ? chrome.runtime.connect({ name: PORT_OFFSCREEN }) : null;
+let port = null;
 
-if (!port) {
-  console.warn("[Offscreen] chrome.runtime.connect is unavailable. Running outside extension context?");
-} else {
-  port.onMessage.addListener(async (msg) => {
-  switch (msg.type) {
-    case BG_PROCESS_FRAME: {
-      const { correlationId, rawBase64, buffer, piiBoxes, dpr } = msg;
-      try {
-        const result = await processFrame(rawBase64, buffer, piiBoxes || [], dpr || 1.0);
-        port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result });
-      } catch (err) {
-        console.error("[Offscreen] Frame error:", err);
-        port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result: fallbackResult() });
-      }
-      break;
-    }
-    case HEARTBEAT_PING:
-      port.postMessage({ type: HEARTBEAT_PONG });
-      break;
+function connectPort() {
+  if (!chrome.runtime?.connect) {
+    console.warn("[Offscreen] chrome.runtime.connect is unavailable. Running outside extension context?");
+    return;
   }
-  });
+
+  try {
+    port = chrome.runtime.connect({ name: PORT_OFFSCREEN });
+
+    port.onMessage.addListener(async (msg) => {
+      switch (msg.type) {
+        case BG_PROCESS_FRAME: {
+          const { correlationId, rawBase64, buffer, piiBoxes, dpr } = msg;
+          try {
+            const result = await processFrame(rawBase64, buffer, piiBoxes || [], dpr || 1.0);
+            if (port) port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result });
+          } catch (err) {
+            console.error("[Offscreen] Frame error:", err);
+            if (port) port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result: fallbackResult() });
+          }
+          break;
+        }
+        case HEARTBEAT_PING:
+          if (port) port.postMessage({ type: HEARTBEAT_PONG });
+          break;
+      }
+    });
+
+    port.onDisconnect.addListener(() => {
+      console.warn("[Offscreen] Port disconnected from Service Worker. Auto-reconnecting...");
+      port = null;
+      setTimeout(connectPort, 400);
+    });
+
+    // Signal readiness
+    port.postMessage({ type: OS_READY, gpuStatus });
+    console.log("[Offscreen] Connected to Service Worker channel.");
+  } catch (err) {
+    console.error("[Offscreen] Connect error:", err);
+    setTimeout(connectPort, 1000);
+  }
 }
+
+connectPort();
 
 function reportGPUStatus() {
   if (port) port.postMessage({ type: OS_WEBGPU_STATUS, status: gpuStatus });
 }
-
-// Signal readiness
-if (port) port.postMessage({ type: OS_READY, gpuStatus });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FRAME PROCESSING PIPELINE

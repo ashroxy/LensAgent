@@ -30,9 +30,9 @@ import {
   POPUP_HITL_RESPONSE, POPUP_APPROVAL_RESPONSE, POPUP_CLEAR_HISTORY
 } from "../lib/message-types.js";
 
-// Initialize Vault
+// Initialize Vault (No top-level await to ensure Manifest V3 SW compatibility)
 const vaultManager = new VaultManager();
-await vaultManager.initialize();
+const vaultInitPromise = vaultManager.initialize().catch(e => console.error("[SW] Vault init error:", e));
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE
@@ -92,22 +92,32 @@ function stopHeartbeat() {
 let creatingOffscreenPromise = null;
 
 async function ensureOffscreenDocument() {
-  // If Chrome 116+ hasDocument() is available, check it first
-  if (chrome.offscreen?.hasDocument && await chrome.offscreen.hasDocument()) {
-    return;
-  }
+  // If port is already active and alive, nothing to do
+  if (offscreenPort) return;
 
-  // Fallback check for active contexts
-  if (chrome.runtime?.getContexts) {
+  let hasDoc = false;
+  if (chrome.offscreen?.hasDocument) {
+    hasDoc = await chrome.offscreen.hasDocument();
+  } else if (chrome.runtime?.getContexts) {
     try {
       const contexts = await chrome.runtime.getContexts({
         contextTypes: ["OFFSCREEN_DOCUMENT"],
       });
-      if (contexts.length > 0) return;
+      hasDoc = contexts.length > 0;
     } catch (_) {}
   }
 
-  // If creation is currently in progress, await the active promise to avoid duplicate invocation
+  // If document exists but port is NOT connected (stale/zombie), close it so we can re-create
+  if (hasDoc && !offscreenPort) {
+    console.log("[SW] Cleaning up stale offscreen document...");
+    try {
+      await chrome.offscreen.closeDocument();
+    } catch (e) {
+      console.warn("[SW] Failed closing stale offscreen doc:", e);
+    }
+  }
+
+  // If creation is currently in progress, await active promise
   if (creatingOffscreenPromise) {
     await creatingOffscreenPromise;
     return;
@@ -120,11 +130,10 @@ async function ensureOffscreenDocument() {
         reasons:       ["WORKERS"],
         justification: "On-device WebGPU visual inference and PII redaction for privacy-preserving browser agent.",
       });
-      console.log("[SW] Offscreen document created.");
+      console.log("[SW] Fresh offscreen document created.");
     } catch (err) {
-      // Gracefully handle harmless race if another event created it concurrently
       if (err.message?.includes("Only a single offscreen document may be created")) {
-        console.log("[SW] Offscreen document already exists.");
+        console.log("[SW] Offscreen document already registered.");
       } else {
         throw err;
       }
@@ -240,19 +249,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case POPUP_VAULT_GET:
-      vaultManager.getAllEntries().then(sendResponse);
+      vaultInitPromise.then(() => vaultManager.getAllEntries()).then(sendResponse);
       return true;
 
     case POPUP_VAULT_SET:
-      vaultManager.setEntry(msg.key, msg.value).then(() => sendResponse({status: "OK"}));
+      vaultInitPromise.then(() => vaultManager.setEntry(msg.key, msg.value)).then(() => sendResponse({status: "OK"}));
       return true;
 
     case POPUP_VAULT_DELETE:
-      vaultManager.removeEntry(msg.key).then(() => sendResponse({status: "OK"}));
+      vaultInitPromise.then(() => vaultManager.removeEntry(msg.key)).then(() => sendResponse({status: "OK"}));
       return true;
 
     case POPUP_VAULT_FLUSH:
-      vaultManager.flush().then(() => sendResponse({status: "OK"}));
+      vaultInitPromise.then(() => vaultManager.flush()).then(() => sendResponse({status: "OK"}));
       return true;
 
     case POPUP_HITL_RESPONSE:
@@ -286,6 +295,9 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       return { status: "ERROR", error: "Goal cannot be empty." };
     }
 
+    // Ensure vault is fully loaded before agent starts
+    await vaultInitPromise;
+
     // Load settings (with any overrides from popup)
     const settings = await storage.loadSettings();
     if (settingsOverride) Object.assign(settings, settingsOverride);
@@ -311,9 +323,14 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       return { status: "ERROR", error: `Cannot automate restricted page: ${url}` };
     }
 
-    // Ensure offscreen document
+    // Ensure offscreen document is ready and port connected
     await ensureOffscreenDocument();
-    if (!offscreenPort) await new Promise((r) => setTimeout(r, 600));
+
+    // Dynamically poll for port connection up to 3000ms
+    const portWaitStart = Date.now();
+    while (!offscreenPort && Date.now() - portWaitStart < 3000) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
     if (!offscreenPort) return { status: "ERROR", error: "Offscreen perception engine failed to connect." };
 
     // Clean up any stale or lingering debugger attachment on this tab
