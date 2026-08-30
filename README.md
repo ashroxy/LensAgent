@@ -91,11 +91,17 @@ SIH-171/
   "host_permissions": ["http://*/*", "https://*/*"],
   "minimum_chrome_version": "118"
 
-### Content Security Policy
+### Content Security Policy (Dual CSP — Network Gagged Privacy Sandbox)
+  ```json
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-  }
-  Required for ONNX Runtime Web (WASM backend) in offscreen document.
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self'",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'wasm-unsafe-eval'; connect-src 'none'; img-src 'self' data: blob:; object-src 'none'"
+  },
+  "sandbox": { "pages": ["offscreen/offscreen.html"] }
+  ```
+  - `extension_pages` CSP: allows WASM (for ONNX Runtime Web) and self-hosted scripts only.
+  - `sandbox` CSP: **`connect-src 'none'`** — the offscreen document (where all PII data exists) is mathematically forbidden from making ANY network requests. Even if malicious code were injected, `fetch()` and `XMLHttpRequest` would throw `NetworkError`. This is an enforceable guarantee, not a convention.
+  - This Fail-Closed CSP design means the redaction engine operates in a true air-gapped sandbox.
 
 ### API Rate Limits and Constraints
 - chrome.tabs.captureVisibleTab: Hard limit 2 calls/second — **NOT USED** (too slow)
@@ -155,9 +161,55 @@ The popup renders two adjacent canvases:
 - **Raw Viewport** (left): Shows the live screencast with green bounding boxes + numeric ID labels overlaid on detected UI elements
 - **Sanitized Stream** (right): Shows the exact image sent to the server, with PII regions blacked out and tagged with red redaction labels
 
-Real-time metrics bar shows: active redaction count, average cycle latency, total frames captured, and delta-skipped frame count. A scrollable, timestamped action log tracks every agent decision.
+### 8. Set-of-Mark (SoM) Visual Grounding (arXiv:2310.11441)
+Each detected UI element is annotated with a numeric SoM ID (`som_id: 1, som_label: "[1]"`). The AI model receives these IDs alongside the screenshot, enabling it to output "Click element 3" instead of hallucinating raw pixel coordinates. This technique, pioneered by Microsoft Research, dramatically improves visual grounding accuracy and is used in production by OmniParser-class GUI agents.
 
-## Integration Contract (Member 1 ↔ Members 2/3)
+### 9. Fail-Closed Security Architecture
+If any step in the redaction pipeline (PII scan, canvas redaction, output validation) fails, errors out, or times out, the raw frame is **immediately dropped** and never forwarded to the network. This is the opposite of "fail-open" (where errors silently pass unredacted data through), and is the standard security posture for privacy-critical systems. The `[FAIL-CLOSED]` log prefix makes every drop auditable.
+
+### 10. Air-Gapped Offscreen Sandbox via CSP
+The offscreen document (where all raw PII data exists in memory) is locked down with `connect-src 'none'` in the manifest CSP. This makes it mathematically impossible for the sandbox to initiate any outbound network requests, even if arbitrary code execution were somehow achieved. This is an enforceable browser-engine-level guarantee, not a convention.
+
+## Cross-Browser Compatibility
+
+### Chrome / Chromium (Primary Target)
+LensAgent is architected as a **Chrome-first extension**. The entire automation pipeline depends on the `chrome.debugger` API, which exposes the Chrome DevTools Protocol (CDP) for:
+- `Page.startScreencast` — push-based 30fps frame delivery
+- `Input.dispatchMouseEvent` / `Input.dispatchKeyEvent` — synthetic input
+- `Accessibility.getFullAXTree` — full accessibility tree extraction
+- `Runtime.evaluate` — DOM PII scanning with bounding box extraction
+
+This works identically on all Chromium-based browsers: **Chrome, Edge, Brave, Opera, Arc**.
+
+### Firefox (Documented Limitation)
+Firefox does **not** implement `chrome.debugger` for WebExtensions. Mozilla closed the feature request as `wontfix` ([Mozilla Discourse #14311](https://discourse.mozilla.org/t/does-mozilla-plan-to-support-chrome-debugger-protocol-in-webextension-api/14311)). Firefox has been actively deprecating CDP since v129 in favor of WebDriver BiDi (W3C), which is designed for external automation clients, not in-extension use.
+
+**Fallback Strategy (Documented, Not Claimed):**
+A Firefox-compatible fallback would use a content-script-based approach:
+- `browser.tabs.captureVisibleTab()` instead of CDP screencast (slower: 2 calls/sec limit)
+- Synthetic DOM events (`element.click()`, `element.dispatchEvent()`) instead of CDP input synthesis
+- Standard DOM traversal instead of CDP accessibility tree
+
+This is documented as a **future enhancement path**, not a current capability.
+
+### WebGPU (Cross-Browser)
+WebGPU now ships by default across Chrome, Edge, Firefox, and Safari. The vision model side of LensAgent does not have cross-browser issues. A WASM fallback is planned for older devices and Linux Firefox where GPU support is still limited.
+
+## Changelog
+
+### 2026-08-30 v5.0 — Security Hardening & Architectural Upgrades (Member 1)
+- **agent-loop.js**: Implemented **Fail-Closed Security Architecture** — PII scan, redaction, and output validation each have independent try/catch blocks. If ANY step fails, the raw frame is dropped (never sent to network). Added `[FAIL-CLOSED]` audit-trail logging for every drop. Added output validation guard (redacted image must be >100 bytes).
+- **manifest.json**: Added **Air-Gapped Sandbox CSP** — `connect-src 'none'` on the offscreen document, mathematically preventing any network egress from the privacy sandbox. Added `sandbox.pages` declaration for `offscreen/offscreen.html`.
+- **offscreen.js**: Implemented **Set-of-Mark (SoM) Prompting** (arXiv:2310.11441) — each structural element is annotated with `som_id` and `som_label` so the AI model references elements by ID instead of pixel coordinates. Added as a top-level `applySetOfMark()` function.
+- **action-executor.js**: Unified JIT Regex Engine — compiled 8 separate PII patterns into a single O(1) regex using capture-group indexing for category identification.
+- **README.md**: Added Cross-Browser Compatibility section (Chrome-first, Firefox limitations documented), updated CSP documentation, added 3 new innovation entries.
+
+### 2026-08-29 v4.1 — UI Overhaul & Edge Case Fixes (Member 1)
+- **popup.html/css/js**: Fullscreen video modal with edge-to-edge canvas, structured history cards with status badges, expand buttons on video panels, Esc-to-close support.
+- **popup.html**: Fixed duplicate unit suffixes (ms ms, % %).
+- **popup.js**: Pop-out mode smart tab targeting, dynamic canvas resolution, bbox format normalization.
+
+### 2026-08-26 v4.0 - UI Pro Max & Real Privacy Engine (Member 1)
 
 ### Frame Input (Background → Offscreen)
 Message sent over `chrome.runtime.Port` named `PORT_OFFSCREEN_PERCEPTION`:
@@ -276,7 +328,6 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 ## Target Demo Task
 "Login → Search → Filter → Download" — a multi-step autonomous workflow demonstrating end-to-end browser automation with privacy-preserving redaction.
 
-## Changelog
 
 ### 2026-08-26 v4.0 - UI Pro Max & Real Privacy Engine (Member 1)
 - **popup.html & popup.css**: Completely redesigned the UI using native CSS to replicate a world-class "Operate Mode" developer dashboard. Features a Sky Blue dark theme, a 3-column Bento grid for metrics, side-by-side video feeds, and a terminal action log.

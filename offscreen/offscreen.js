@@ -240,8 +240,43 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
       },
     });
   }
+  const somElements = applySetOfMark(elements);
 
-  return { elements, redactedRegions: tokenMap, rawImageBase64: rawBase64, redactedImageBase64: sanitizedImage };
+  return {
+    elements: somElements,
+    redactedRegions: tokenMap,
+    rawImageBase64: rawBase64,
+    redactedImageBase64: sanitizedImage,
+  };
+}
+
+/**
+ * Set-of-Mark (SoM) Prompting — Microsoft Research (arXiv:2310.11441)
+ * ====================================================================
+ * Annotates each detected UI element with a numbered SoM ID so the
+ * AI model can reference elements by ID ("Click element 3") instead of
+ * guessing raw pixel coordinates. This dramatically improves visual
+ * grounding accuracy and eliminates coordinate hallucination.
+ *
+ * PRIVACY NOTE: SoM annotation happens AFTER redaction, so PII regions
+ * are already blacked out before any element labeling is applied.
+ *
+ * @param {Array} elements - Detected structural UI elements with bboxes
+ * @returns {Array} Elements annotated with som_id and som_label fields
+ */
+function applySetOfMark(elements) {
+  if (!elements || elements.length === 0) return elements;
+
+  try {
+    return elements.map((el, idx) => ({
+      ...el,
+      som_id: idx + 1,  // 1-indexed for human readability
+      som_label: `[${idx + 1}]`,
+    }));
+  } catch (err) {
+    console.warn("[SoM] Overlay annotation failed:", err.message);
+    return elements;
+  }
 }
 
 function decodeFrameToCanvas(base64) {
