@@ -323,14 +323,14 @@ function updateSparkline(latency) {
   latencyHistory.push(latency);
   if (latencyHistory.length > MAX_SPARKLINE) latencyHistory.shift();
 
-  if (!sparkCanvas) return;
+  if (!sparkCanvas || !sparkCtx) return;
   const w = sparkCanvas.width; const h = sparkCanvas.height;
   const max = Math.max(50, ...latencyHistory);
 
   if (sparkCtx) sparkCtx.clearRect(0, 0, w, h);
 
   // Grid line at 500ms
-  if (sparkCtx) sparkCtx.strokeStyle = "#222222";
+  if (sparkCtx) sparkCtx.strokeStyle = "#c3c6d2";
   if (sparkCtx) sparkCtx.lineWidth = 0.5;
   const gridY = h - (500 / max) * (h - 8);
   if (sparkCtx) sparkCtx.beginPath();
@@ -342,8 +342,8 @@ function updateSparkline(latency) {
 
   // Gradient fill
   const grad = sparkCtx ? sparkCtx.createLinearGradient(0, 0, 0, h) : null;
-  grad.addColorStop(0, "rgba(237, 237, 237, 0.1)");
-  grad.addColorStop(1, "rgba(237, 237, 237, 0.0)");
+  grad.addColorStop(0, "rgba(48, 95, 159, 0.2)");
+  grad.addColorStop(1, "rgba(48, 95, 159, 0.0)");
 
   const step = w / (MAX_SPARKLINE - 1);
 
@@ -367,7 +367,7 @@ function updateSparkline(latency) {
     const y = h - (latencyHistory[i] / max) * (h - 8);
     if(sparkCtx) { i === 0 ? sparkCtx.moveTo(x, y) : sparkCtx.lineTo(x, y); }
   }
-  if (sparkCtx) sparkCtx.strokeStyle = "#ededed";
+  if (sparkCtx) sparkCtx.strokeStyle = "#305f9f";
   if (sparkCtx) sparkCtx.lineWidth = 1.5;
   if (sparkCtx) sparkCtx.stroke();
 
@@ -376,7 +376,7 @@ function updateSparkline(latency) {
   const lastY = h - (latencyHistory[latencyHistory.length - 1] / max) * (h - 8);
   if (sparkCtx) sparkCtx.beginPath();
   if (sparkCtx) sparkCtx.arc(lastX, lastY, 2.5, 0, 2 * Math.PI);
-  if (sparkCtx) sparkCtx.fillStyle = "#ededed";
+  if (sparkCtx) sparkCtx.fillStyle = "#305f9f";
   if (sparkCtx) sparkCtx.fill();
 }
 
@@ -909,3 +909,5 @@ if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprova
 
 
 }
+
+
