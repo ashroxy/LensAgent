@@ -162,9 +162,12 @@ async function getCachedModel(url) {
 // PORT CONNECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const port = chrome.runtime.connect({ name: PORT_OFFSCREEN });
+const port = chrome.runtime?.connect ? chrome.runtime.connect({ name: PORT_OFFSCREEN }) : null;
 
-port.onMessage.addListener(async (msg) => {
+if (!port) {
+  console.warn("[Offscreen] chrome.runtime.connect is unavailable. Running outside extension context?");
+} else {
+  port.onMessage.addListener(async (msg) => {
   switch (msg.type) {
     case BG_PROCESS_FRAME: {
       const { correlationId, rawBase64, buffer, piiBoxes, dpr } = msg;
@@ -181,14 +184,15 @@ port.onMessage.addListener(async (msg) => {
       port.postMessage({ type: HEARTBEAT_PONG });
       break;
   }
-});
+  });
+}
 
 function reportGPUStatus() {
-  port.postMessage({ type: OS_WEBGPU_STATUS, status: gpuStatus });
+  if (port) port.postMessage({ type: OS_WEBGPU_STATUS, status: gpuStatus });
 }
 
 // Signal readiness
-port.postMessage({ type: OS_READY, gpuStatus });
+if (port) port.postMessage({ type: OS_READY, gpuStatus });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FRAME PROCESSING PIPELINE
