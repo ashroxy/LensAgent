@@ -89,19 +89,51 @@ function stopHeartbeat() {
 // 2. OFFSCREEN DOCUMENT LIFECYCLE
 // ═══════════════════════════════════════════════════════════════════════════════
 
+let creatingOffscreenPromise = null;
+
 async function ensureOffscreenDocument() {
-  const contexts = await chrome.runtime.getContexts({
-    contextTypes: ["OFFSCREEN_DOCUMENT"],
-  });
+  // If Chrome 116+ hasDocument() is available, check it first
+  if (chrome.offscreen?.hasDocument && await chrome.offscreen.hasDocument()) {
+    return;
+  }
 
-  if (contexts.length > 0) return;
+  // Fallback check for active contexts
+  if (chrome.runtime?.getContexts) {
+    try {
+      const contexts = await chrome.runtime.getContexts({
+        contextTypes: ["OFFSCREEN_DOCUMENT"],
+      });
+      if (contexts.length > 0) return;
+    } catch (_) {}
+  }
 
-  await chrome.offscreen.createDocument({
-    url:           "offscreen/offscreen.html",
-    reasons:       ["WORKERS"],
-    justification: "On-device WebGPU visual inference and PII redaction for privacy-preserving browser agent.",
-  });
-  console.log("[SW] Offscreen document created.");
+  // If creation is currently in progress, await the active promise to avoid duplicate invocation
+  if (creatingOffscreenPromise) {
+    await creatingOffscreenPromise;
+    return;
+  }
+
+  creatingOffscreenPromise = (async () => {
+    try {
+      await chrome.offscreen.createDocument({
+        url:           "offscreen/offscreen.html",
+        reasons:       ["WORKERS"],
+        justification: "On-device WebGPU visual inference and PII redaction for privacy-preserving browser agent.",
+      });
+      console.log("[SW] Offscreen document created.");
+    } catch (err) {
+      // Gracefully handle harmless race if another event created it concurrently
+      if (err.message?.includes("Only a single offscreen document may be created")) {
+        console.log("[SW] Offscreen document already exists.");
+      } else {
+        throw err;
+      }
+    } finally {
+      creatingOffscreenPromise = null;
+    }
+  })();
+
+  await creatingOffscreenPromise;
 }
 
 async function handleOffscreenCrash() {
