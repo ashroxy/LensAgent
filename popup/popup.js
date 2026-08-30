@@ -20,6 +20,7 @@ import {
   POPUP_GET_HISTORY, POPUP_EXPORT_LOG,
   POPUP_HITL_RESPONSE, POPUP_APPROVAL_RESPONSE,
   POPUP_VAULT_GET, POPUP_VAULT_SET, POPUP_VAULT_DELETE, POPUP_VAULT_FLUSH,
+  POPUP_CLEAR_HISTORY,
   BG_AGENT_STATUS, BG_SETTINGS_UPDATED,
   BG_HITL_PROMPT, BG_APPROVAL_PROMPT, BG_VAULT_DATA,
   AUDIT_FRAME_UPDATE, AUDIT_ACTION_LOG,
@@ -424,7 +425,7 @@ function setState(state) {
   currentState = state;
   stateLabel.textContent = state;
   stateLabel.className = "state-label";
-  statusDot.className  = "status-dot";
+  statusDot.className  = "status-dot dot-core";
 
   const map = {
     [AgentState.RUNNING]:  ["running", "active"],
@@ -436,7 +437,11 @@ function setState(state) {
   };
   const [lbl, dot] = map[state] || ["", ""];
   if (lbl) stateLabel.classList.add(lbl);
-  if (dot) statusDot.classList.add(dot);
+  if (dot) {
+    // Remove any other state classes (active, paused, error, finished) except dot-core
+    statusDot.classList.remove("active", "paused", "error", "finished");
+    statusDot.classList.add(dot);
+  }
 }
 
 function setConnectionBadge(quality) {
@@ -472,17 +477,31 @@ async function loadSettingsUI() {
 }
 
 saveSettingsBtn.addEventListener("click", async () => {
+  // Helper: parse a numeric field into a finite clamped integer within [min,max].
+  // Returns fallback if raw is empty/blank; otherwise clamps to [min,max].
+  const clampInt = (raw, min, max, fallback) => {
+    if (raw === null || raw === undefined || raw.trim() === '') return fallback;
+    const n = Math.round(Number(raw));
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, n));
+  };
+
   const settings = {
     backendUrl:        settBackendUrl.value.trim(),
-    maxSteps:          parseInt(settMaxSteps.value, 10),
-    captureQuality:    parseInt(settCaptureQuality.value, 10),
-    serverTimeoutMs:   parseInt(settServerTimeout.value, 10),
-    stabilizeDelayMs:  parseInt(settStabilizeDelay.value, 10),
+    maxSteps:          clampInt(settMaxSteps.value, 5, 100, DEFAULT_SETTINGS.maxSteps),
+    captureQuality:    clampInt(settCaptureQuality.value, 30, 100, DEFAULT_SETTINGS.captureQuality),
+    serverTimeoutMs:   clampInt(settServerTimeout.value, 2000, 30000, DEFAULT_SETTINGS.serverTimeoutMs),
+    stabilizeDelayMs:  clampInt(settStabilizeDelay.value, 50, 2000, DEFAULT_SETTINGS.stabilizeDelayMs),
     humanizeInputs:    settHumanize.checked,
     enableDeltaFrames: settDeltaFrames.checked,
     enableAuditStream: settAuditStream.checked,
   };
   await msg({ type: POPUP_UPDATE_SETTINGS, settings });
+  // Reflect clamped values back into the form so the user sees the saved state.
+  settMaxSteps.value       = settings.maxSteps;
+  settCaptureQuality.value = settings.captureQuality;
+  settServerTimeout.value  = settings.serverTimeoutMs;
+  settStabilizeDelay.value = settings.stabilizeDelayMs;
   settingsMsg.textContent = "✅ Settings saved.";
   settingsMsg.hidden = false;
   setTimeout(() => { settingsMsg.hidden = true; }, 2000);
@@ -522,9 +541,6 @@ async function loadHistoryUI() {
       : "--";
 
     const result = entry.result || "UNKNOWN";
-    const resultIcon = result.includes("FINISHED") || result.includes("ACHIEVED") ? "check_circle"
-                     : result.includes("STOP") ? "pause_circle"
-                     : "error";
 
     const dateStr = entry.date || new Date(entry.timestamp || Date.now()).toLocaleString("en-IN", {
       day: "2-digit", month: "2-digit", year: "numeric",
@@ -554,7 +570,7 @@ function formatDuration(ms) {
 }
 
 clearHistoryBtn.addEventListener("click", async () => {
-  await msg({ type: POPUP_UPDATE_SETTINGS, settings: {} });
+  await msg({ type: POPUP_CLEAR_HISTORY });
   historyList.innerHTML = `
     <div class="history-empty">
       <span class="material-symbols-outlined">inbox</span>
@@ -659,17 +675,15 @@ document.addEventListener("keydown", (e) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const VAULT_FIELDS = [
-  { key: 'full_name',  label: 'Full Name',  placeholder: 'John Doe' },
-  { key: 'first_name', label: 'First Name', placeholder: 'John' },
-  { key: 'last_name',  label: 'Last Name',  placeholder: 'Doe' },
-  { key: 'email',      label: 'Email',      placeholder: 'john@example.com', type: 'email' },
-  { key: 'phone',      label: 'Phone',      placeholder: '+91 98765 43210', type: 'tel' },
-  { key: 'address',    label: 'Address',    placeholder: '123 Main Street' },
-  { key: 'city',       label: 'City',       placeholder: 'Mumbai' },
-  { key: 'state',      label: 'State',      placeholder: 'Maharashtra' },
-  { key: 'pincode',    label: 'Pincode',    placeholder: '400001' },
-  { key: 'dob',        label: 'Date of Birth', placeholder: '', type: 'date' },
-  { key: 'gender',     label: 'Gender',     placeholder: 'Male / Female / Other' },
+  { key: 'full_name', label: 'Full Name',  placeholder: 'John Doe', type: 'text' },
+  { key: 'email',     label: 'Email',      placeholder: 'john@example.com', type: 'email' },
+  { key: 'phone',     label: 'Phone',      placeholder: '+91 98765 43210', type: 'tel' },
+  { key: 'address',   label: 'Address',    placeholder: '123 Main Street', type: 'text' },
+  { key: 'city',      label: 'City',       placeholder: 'Mumbai', type: 'text' },
+  { key: 'state',     label: 'State',      placeholder: 'Maharashtra', type: 'text' },
+  { key: 'pincode',   label: 'Pincode',    placeholder: '400001', type: 'text' },
+  { key: 'dob',       label: 'Date of Birth', placeholder: '', type: 'date' },
+  { key: 'gender',    label: 'Gender',     placeholder: 'Select Gender', type: 'select' },
 ];
 
 async function loadVaultUI() {
@@ -684,19 +698,31 @@ function populateVaultUI(vaultData) {
       input.value = vaultData[field.key];
     }
   }
-  // Update count
-  const filledCount = Object.keys(vaultData || {}).filter(k => vaultData[k]).length;
+  // Update count (based on visible fields)
+  updateVaultCountLocally();
+}
+
+function updateVaultCountLocally() {
+  const filled = VAULT_FIELDS.filter((f) => {
+    const input = document.getElementById(`vault_${f.key}`);
+    return input && input.value && input.value.trim() !== '';
+  }).length;
   const countEl = document.getElementById('vaultFilledCount');
-  if (countEl) countEl.textContent = filledCount;
+  if (countEl) countEl.textContent = filled;
 }
 
 async function saveVault() {
   for (const field of VAULT_FIELDS) {
     const input = document.getElementById(`vault_${field.key}`);
-    if (input && input.value.trim()) {
-      await msg({ type: POPUP_VAULT_SET, key: field.key, value: input.value.trim() });
+    if (!input) continue;
+    const raw = input.value;
+    if (raw && raw.trim()) {
+      await msg({ type: POPUP_VAULT_SET, key: field.key, value: raw.trim() });
+    } else {
+      await msg({ type: POPUP_VAULT_DELETE, key: field.key });
     }
   }
+  updateVaultCountLocally();
   showVaultMsg('Vault saved securely.', 'success');
   addLog('[Vault] Identity data saved locally.', 'info');
 }
@@ -705,6 +731,7 @@ async function deleteVaultField(key) {
   await msg({ type: POPUP_VAULT_DELETE, key });
   const input = document.getElementById(`vault_${key}`);
   if (input) input.value = '';
+  updateVaultCountLocally();
   showVaultMsg(`Removed ${key} from vault.`, 'info');
 }
 
@@ -715,6 +742,7 @@ async function flushVault() {
     const input = document.getElementById(`vault_${field.key}`);
     if (input) input.value = '';
   }
+  updateVaultCountLocally();
   showVaultMsg('Vault cleared.', 'warning');
   addLog('[Vault] All identity data cleared.', 'warning');
 }

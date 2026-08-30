@@ -4,18 +4,32 @@
  */
 
  :root {
-  --bg-dark: #0F172A;
-  --bg-surface: #1E293B;
-  --border: #334155;
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  --primary: #0EA5E9;       /* Easy on the eyes Sky Blue */
-  --primary-hover: #38BDF8;
-  --red: #EF4444;
-  --red-hover: #F87171;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Fira Code', monospace;
-}
+   --bg-dark: #0F172A;
+   --bg-surface: #1E293B;
+   --border: #334155;
+   --text-main: #F8FAFC;
+   --text-muted: #94A3B8;
+   --primary: #0EA5E9;       /* Easy on the eyes Sky Blue */
+   --primary-hover: #38BDF8;
+   --red: #EF4444;
+   --red-hover: #F87171;
+   --font-sans: 'Inter', system-ui, sans-serif;
+   --font-mono: 'Fira Code', monospace;
+   --success: #22c55e;
+   --warning: #f59e0b;
+ }
+
+ .visually-hidden {
+   position: absolute;
+   width: 1px;
+   height: 1px;
+   padding: 0;
+   margin: -1px;
+   overflow: hidden;
+   clip: rect(0, 0, 0, 0);
+   white-space: nowrap;
+   border: 0;
+ }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
@@ -97,6 +111,10 @@ body {
 .status-dot-wrapper { position: relative; display: flex; width: 12px; height: 12px; margin-top: 4px; }
 .dot-ping { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: var(--primary); opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
 .dot-core { position: relative; width: 100%; height: 100%; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px rgba(14, 165, 233, 0.6); }
+.status-dot.active { background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.6); }
+.status-dot.paused { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, 0.6); }
+.status-dot.error { background: var(--red); box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+.status-dot.finished { background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.6); }
 @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
 
 .badge-row { display: flex; gap: 8px; }
@@ -107,10 +125,10 @@ body {
 }
 
 /* PANELS */
-.glass-panel { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 0; }
+.glass-panel { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 1; min-height: 0; }
 .glass-panel label { display: block; font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); letter-spacing: 1.5px; margin-bottom: 12px; }
-.control-row { display: flex; gap: 16px; }
-.input-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
+.control-row { display: flex; gap: 16px; flex-shrink: 1; min-height: 0; }
+.input-wrapper { flex: 1; position: relative; display: flex; align-items: center; min-width: 0; }
 .input-icon { position: absolute; left: 12px; color: var(--text-muted); font-size: 20px; transition: color 180ms ease-out; }
 .input-wrapper:focus-within .input-icon { color: var(--primary); }
 .input-wrapper input { width: 100%; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px 12px 40px; color: var(--text-main); font-family: var(--font-mono); font-size: 13px; outline: none; transition: all 180ms ease-out; }
@@ -178,6 +196,9 @@ body {
 .setting-row { display: flex; gap: 16px; }
 .setting-group.half { flex: 1; }
 .checkbox-label { display: flex !important; align-items: center; gap: 8px; flex-direction: row !important; font-size: 13px !important; letter-spacing: 0 !important; text-transform: none !important; font-family: var(--font-sans) !important; color: var(--text-main) !important; cursor: pointer; }
+.checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); flex-shrink: 0; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
 .settings-actions { margin-top: 24px; display: flex; gap: 12px; }
 
 /* HISTORY CARDS */
@@ -254,17 +275,21 @@ body {
 
 /* Tabs Logic */
 .tab-content { display: none !important; flex-direction: column; }
-.tab-content.active { display: flex !important; flex: 1; animation: fadein 200ms ease-out; }
+.tab-content.active { display: flex !important; flex: 1; min-height: 0; overflow-y: auto; animation: fadein 200ms ease-out; }
 @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    VAULT TAB STYLES
    ═══════════════════════════════════════════════════════════════════════════════ */
 
+.text-sm { font-size: 16px !important; }
+
 .vault-field-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 
 .vault-field-row .setting-input {
@@ -281,6 +306,8 @@ body {
   display: flex;
   align-items: center;
   transition: background 0.2s;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .vault-delete-btn:hover {

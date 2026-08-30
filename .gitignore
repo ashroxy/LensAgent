@@ -22,6 +22,10 @@ node_modules/
 dist/
 build/
 
+# Generated UI test artifacts
+testing/*.png
+testing/*-report.json
+
 rubrics/
 
 context.md

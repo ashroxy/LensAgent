@@ -27,7 +27,7 @@ import {
   AgentState, PORT_OFFSCREEN,
   HEARTBEAT_PING, ALARM_KEEPALIVE, HEARTBEAT_INTERVAL,
   POPUP_VAULT_GET, POPUP_VAULT_SET, POPUP_VAULT_DELETE, POPUP_VAULT_FLUSH,
-  POPUP_HITL_RESPONSE, POPUP_APPROVAL_RESPONSE
+  POPUP_HITL_RESPONSE, POPUP_APPROVAL_RESPONSE, POPUP_CLEAR_HISTORY
 } from "../lib/message-types.js";
 
 // Initialize Vault
@@ -232,6 +232,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (activeAgent) activeAgent.handleApprovalResponse(msg);
       sendResponse({status: "OK"});
       return false;
+
+    case POPUP_CLEAR_HISTORY:
+      storage.clearHistory().then(() => sendResponse({ status: "OK" }));
+      return true;
   }
 });
 
