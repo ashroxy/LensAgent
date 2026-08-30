@@ -18,7 +18,10 @@ import {
   POPUP_START_AGENT, POPUP_STOP_AGENT, POPUP_GET_STATUS,
   POPUP_GET_SETTINGS, POPUP_UPDATE_SETTINGS,
   POPUP_GET_HISTORY, POPUP_EXPORT_LOG,
+  POPUP_HITL_RESPONSE, POPUP_APPROVAL_RESPONSE,
+  POPUP_VAULT_GET, POPUP_VAULT_SET, POPUP_VAULT_DELETE, POPUP_VAULT_FLUSH,
   BG_AGENT_STATUS, BG_SETTINGS_UPDATED,
+  BG_HITL_PROMPT, BG_APPROVAL_PROMPT, BG_VAULT_DATA,
   AUDIT_FRAME_UPDATE, AUDIT_ACTION_LOG,
   AgentState, DEFAULT_SETTINGS,
 } from "../lib/message-types.js";
@@ -72,6 +75,25 @@ const settingsMsg        = $("settingsMsg");
 const historyList     = $("historyList");
 const clearHistoryBtn = $("clearHistoryBtn");
 
+// Vault
+const vaultMsg = $("vaultMsg");
+
+// HITL
+const hitlOverlay   = $("hitlOverlay");
+const hitlQuestion  = $("hitlQuestion");
+const hitlInput     = $("hitlInput");
+const hitlSendBtn   = $("hitlSendBtn");
+const hitlSaveToVault = $("hitlSaveToVault");
+const hitlVaultKeyLabel = $("hitlVaultKeyLabel");
+const hitlVaultKey  = $("hitlVaultKey");
+
+// Approval
+const approvalOverlay   = $("approvalOverlay");
+const approvalContext   = $("approvalContext");
+const approvalDetail    = $("approvalDetail");
+const approvalApproveBtn = $("approvalApproveBtn");
+const approvalDenyBtn   = $("approvalDenyBtn");
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -79,6 +101,10 @@ const clearHistoryBtn = $("clearHistoryBtn");
 let currentState   = AgentState.IDLE;
 let latencyHistory = [];  // For sparkline
 const MAX_SPARKLINE = 60;
+
+let pendingHitlCorrelationId = null;
+let pendingHitlVaultKey = null;
+let pendingApprovalCorrelationId = null;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB NAVIGATION
@@ -95,6 +121,7 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
     // Load data when switching to settings or history
     if (target === "settings") loadSettingsUI();
     if (target === "history") loadHistoryUI();
+    if (target === "vault") loadVaultUI();
   });
 });
 
@@ -199,6 +226,15 @@ chrome.runtime.onMessage.addListener((message) => {
       break;
     case BG_AGENT_STATUS:
       handleStatusUpdate(message.payload);
+      break;
+    case BG_HITL_PROMPT:
+      showHitlPrompt(message.payload);
+      break;
+    case BG_APPROVAL_PROMPT:
+      showApprovalPrompt(message.payload);
+      break;
+    case BG_VAULT_DATA:
+      populateVaultUI(message.payload);
       break;
   }
 });
@@ -395,6 +431,8 @@ function setState(state) {
     [AgentState.PAUSED]:   ["paused",  "paused"],
     [AgentState.ERROR]:    ["error",   "error"],
     [AgentState.FINISHED]: ["finished", ""],
+    [AgentState.WAITING_FOR_USER]: ["paused", "paused"],
+    [AgentState.WAITING_FOR_APPROVAL]: ["paused", "paused"],
   };
   const [lbl, dot] = map[state] || ["", ""];
   if (lbl) stateLabel.classList.add(lbl);
@@ -613,3 +651,168 @@ document.addEventListener("keydown", (e) => {
     }
   }
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VAULT MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const VAULT_FIELDS = [
+  { key: 'full_name',  label: 'Full Name',  placeholder: 'John Doe' },
+  { key: 'first_name', label: 'First Name', placeholder: 'John' },
+  { key: 'last_name',  label: 'Last Name',  placeholder: 'Doe' },
+  { key: 'email',      label: 'Email',      placeholder: 'john@example.com', type: 'email' },
+  { key: 'phone',      label: 'Phone',      placeholder: '+91 98765 43210', type: 'tel' },
+  { key: 'address',    label: 'Address',    placeholder: '123 Main Street' },
+  { key: 'city',       label: 'City',       placeholder: 'Mumbai' },
+  { key: 'state',      label: 'State',      placeholder: 'Maharashtra' },
+  { key: 'pincode',    label: 'Pincode',    placeholder: '400001' },
+  { key: 'dob',        label: 'Date of Birth', placeholder: '', type: 'date' },
+  { key: 'gender',     label: 'Gender',     placeholder: 'Male / Female / Other' },
+];
+
+async function loadVaultUI() {
+  const data = await msg({ type: POPUP_VAULT_GET });
+  populateVaultUI(data || {});
+}
+
+function populateVaultUI(vaultData) {
+  for (const field of VAULT_FIELDS) {
+    const input = document.getElementById(`vault_${field.key}`);
+    if (input && vaultData[field.key]) {
+      input.value = vaultData[field.key];
+    }
+  }
+  // Update count
+  const filledCount = Object.keys(vaultData || {}).filter(k => vaultData[k]).length;
+  const countEl = document.getElementById('vaultFilledCount');
+  if (countEl) countEl.textContent = filledCount;
+}
+
+async function saveVault() {
+  for (const field of VAULT_FIELDS) {
+    const input = document.getElementById(`vault_${field.key}`);
+    if (input && input.value.trim()) {
+      await msg({ type: POPUP_VAULT_SET, key: field.key, value: input.value.trim() });
+    }
+  }
+  showVaultMsg('Vault saved securely.', 'success');
+  addLog('[Vault] Identity data saved locally.', 'info');
+}
+
+async function deleteVaultField(key) {
+  await msg({ type: POPUP_VAULT_DELETE, key });
+  const input = document.getElementById(`vault_${key}`);
+  if (input) input.value = '';
+  showVaultMsg(`Removed ${key} from vault.`, 'info');
+}
+
+async function flushVault() {
+  if (!confirm('Clear ALL vault data? This cannot be undone.')) return;
+  await msg({ type: POPUP_VAULT_FLUSH });
+  for (const field of VAULT_FIELDS) {
+    const input = document.getElementById(`vault_${field.key}`);
+    if (input) input.value = '';
+  }
+  showVaultMsg('Vault cleared.', 'warning');
+  addLog('[Vault] All identity data cleared.', 'warning');
+}
+
+function showVaultMsg(text, type = 'info') {
+  if (!vaultMsg) return;
+  vaultMsg.textContent = text;
+  vaultMsg.hidden = false;
+  vaultMsg.style.color = type === 'success' ? '#22c55e' : type === 'warning' ? '#f59e0b' : '#94a3b8';
+  setTimeout(() => { vaultMsg.hidden = true; }, 3000);
+}
+
+// Wire vault buttons
+document.addEventListener('DOMContentLoaded', () => {
+  const saveVaultBtn = document.getElementById('saveVaultBtn');
+  const flushVaultBtn = document.getElementById('flushVaultBtn');
+  if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
+  if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
+  
+  // Wire individual delete buttons
+  for (const field of VAULT_FIELDS) {
+    const delBtn = document.getElementById(`vaultDel_${field.key}`);
+    if (delBtn) delBtn.addEventListener('click', () => deleteVaultField(field.key));
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HITL (HUMAN-IN-THE-LOOP) CHAT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function showHitlPrompt(payload) {
+  pendingHitlCorrelationId = payload.correlationId;
+  pendingHitlVaultKey = payload.suggestedVaultKey || null;
+  
+  hitlQuestion.textContent = payload.question;
+  hitlInput.value = '';
+  hitlOverlay.hidden = false;
+  hitlInput.focus();
+  
+  if (pendingHitlVaultKey) {
+    hitlVaultKeyLabel.hidden = false;
+    hitlVaultKey.textContent = pendingHitlVaultKey;
+  } else {
+    hitlVaultKeyLabel.hidden = true;
+  }
+  
+  setState(AgentState.WAITING_FOR_USER);
+  addLog(`[HITL] Agent asks: "${payload.question}"`, 'warning');
+}
+
+async function sendHitlResponse() {
+  const answer = hitlInput.value.trim();
+  if (!answer) return;
+  
+  const saveToVault = hitlSaveToVault.checked && pendingHitlVaultKey;
+  
+  await msg({
+    type: POPUP_HITL_RESPONSE,
+    correlationId: pendingHitlCorrelationId,
+    answer,
+    saveToVault,
+    vaultKey: pendingHitlVaultKey,
+  });
+  
+  hitlOverlay.hidden = true;
+  pendingHitlCorrelationId = null;
+  pendingHitlVaultKey = null;
+  addLog(`[HITL] User responded (answer saved: ${saveToVault ? 'yes' : 'no'})`, 'action');
+}
+
+if (hitlSendBtn) hitlSendBtn.addEventListener('click', sendHitlResponse);
+if (hitlInput) hitlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendHitlResponse();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// JIT ACTION APPROVAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function showApprovalPrompt(payload) {
+  pendingApprovalCorrelationId = payload.correlationId;
+  approvalContext.textContent = payload.context || 'The agent wants to perform a sensitive action.';
+  approvalDetail.textContent = payload.detail || '';
+  approvalOverlay.hidden = false;
+  
+  setState(AgentState.WAITING_FOR_APPROVAL);
+  addLog(`[APPROVAL] Sensitive action: "${payload.context}"`, 'warning');
+}
+
+async function sendApprovalResponse(approved) {
+  await msg({
+    type: POPUP_APPROVAL_RESPONSE,
+    correlationId: pendingApprovalCorrelationId,
+    approved,
+  });
+  
+  approvalOverlay.hidden = true;
+  pendingApprovalCorrelationId = null;
+  addLog(`[APPROVAL] User ${approved ? 'APPROVED' : 'DENIED'} the action.`, approved ? 'action' : 'error');
+}
+
+if (approvalApproveBtn) approvalApproveBtn.addEventListener('click', () => sendApprovalResponse(true));
+if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprovalResponse(false));

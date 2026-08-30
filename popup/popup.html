@@ -35,6 +35,10 @@
         <span class="material-symbols-outlined">history</span>
         History
       </button>
+      <button class="nav-btn" data-tab="vault">
+        <span class="material-symbols-outlined">vault</span>
+        Vault
+      </button>
     </nav>
   </aside>
 
@@ -257,11 +261,127 @@
         </div>
       </section>
 
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: VAULT                                                         -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-vault" class="tab-content" style="display: none;">
+        <div class="page-context">
+          <h1>Identity Vault</h1>
+          <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">Securely store details for the agent to use when filling forms</p>
+        </div>
+
+        <div class="vault-status">
+          <span class="material-symbols-outlined">lock</span>
+          <span>Your vault is stored locally. <span id="vaultFilledCount" class="vault-count">0</span> fields configured.</span>
+        </div>
+
+        <div class="settings-form glass-panel">
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Full Name</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_full_name" class="setting-input" placeholder="John Doe" />
+                <button class="vault-delete-btn" id="vaultDel_full_name"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label>First Name</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_first_name" class="setting-input" placeholder="John" />
+                <button class="vault-delete-btn" id="vaultDel_first_name"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Last Name</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_last_name" class="setting-input" placeholder="Doe" />
+                <button class="vault-delete-btn" id="vaultDel_last_name"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label>Email</label>
+              <div class="vault-field-row">
+                <input type="email" id="vault_email" class="setting-input" placeholder="john@example.com" />
+                <button class="vault-delete-btn" id="vaultDel_email"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Phone</label>
+              <div class="vault-field-row">
+                <input type="tel" id="vault_phone" class="setting-input" placeholder="+91 98765 43210" />
+                <button class="vault-delete-btn" id="vaultDel_phone"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label>Address</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_address" class="setting-input" placeholder="123 Main Street" />
+                <button class="vault-delete-btn" id="vaultDel_address"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>City</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_city" class="setting-input" placeholder="Mumbai" />
+                <button class="vault-delete-btn" id="vaultDel_city"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label>State</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_state" class="setting-input" placeholder="Maharashtra" />
+                <button class="vault-delete-btn" id="vaultDel_state"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Pincode</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_pincode" class="setting-input" placeholder="400001" />
+                <button class="vault-delete-btn" id="vaultDel_pincode"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label>Date of Birth</label>
+              <div class="vault-field-row">
+                <input type="date" id="vault_dob" class="setting-input" placeholder="" />
+                <button class="vault-delete-btn" id="vaultDel_dob"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Gender</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_gender" class="setting-input" placeholder="Male / Female / Other" />
+                <button class="vault-delete-btn" id="vaultDel_gender"><span class="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <!-- Empty half for layout -->
+            </div>
+          </div>
+
+          <div class="setting-actions mt-4">
+            <button id="saveVaultBtn" class="btn-start" style="padding: 10px 20px;">Save Vault</button>
+            <button id="flushVaultBtn" class="btn-stop" style="padding: 10px 20px;">Clear All</button>
+          </div>
+          <p id="vaultMsg" class="settings-msg" hidden></p>
+        </div>
+      </section>
+
     </main>
 
     <!-- FOOTER -->
     <footer class="footerbar">
-      <span>v1.0.4 • <span style="color: #0EA5E9;">System Active</span></span>
+      <span>v5.1 • <span style="color: #0EA5E9;">System Active</span></span>
       <span id="dprDisplay"></span>
     </footer>
   </div>
@@ -275,6 +395,43 @@
       </button>
     </div>
     <canvas id="modalCanvas" class="modal-canvas"></canvas>
+  </div>
+
+  <!-- HITL CHAT OVERLAY -->
+  <div id="hitlOverlay" class="hitl-overlay" hidden>
+    <div class="hitl-card">
+      <div class="hitl-header">
+        <span class="material-symbols-outlined">chat</span>
+        <span>Agent needs your input</span>
+        <span class="hitl-pulse"></span>
+      </div>
+      <p id="hitlQuestion" class="hitl-question">Loading...</p>
+      <div class="hitl-input-row">
+        <input type="text" id="hitlInput" class="hitl-input" placeholder="Type your answer..." autocomplete="off" />
+        <button id="hitlSendBtn" class="btn-start hitl-send">Send</button>
+      </div>
+      <label class="checkbox-label hitl-save-label">
+        <input type="checkbox" id="hitlSaveToVault" checked />
+        Save to Vault for future use
+      </label>
+      <p id="hitlVaultKeyLabel" class="hitl-vault-key" hidden>Save as: <code id="hitlVaultKey"></code></p>
+    </div>
+  </div>
+
+  <!-- JIT ACTION APPROVAL MODAL -->
+  <div id="approvalOverlay" class="approval-overlay" hidden>
+    <div class="approval-card">
+      <div class="approval-icon-row">
+        <span class="material-symbols-outlined approval-warn-icon">warning</span>
+      </div>
+      <h3 class="approval-title">Action Approval Required</h3>
+      <p id="approvalContext" class="approval-context">The agent wants to perform a sensitive action.</p>
+      <p id="approvalDetail" class="approval-detail"></p>
+      <div class="approval-btn-row">
+        <button id="approvalDenyBtn" class="btn-stop approval-btn">Deny</button>
+        <button id="approvalApproveBtn" class="btn-start approval-btn">Approve</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="popup.js"></script>

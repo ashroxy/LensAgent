@@ -170,6 +170,15 @@ If any step in the redaction pipeline (PII scan, canvas redaction, output valida
 ### 10. Air-Gapped Offscreen Sandbox via CSP
 The offscreen document (where all raw PII data exists in memory) is locked down with `connect-src 'none'` in the manifest CSP. This makes it mathematically impossible for the sandbox to initiate any outbound network requests, even if arbitrary code execution were somehow achieved. This is an enforceable browser-engine-level guarantee, not a convention.
 
+### 11. Zero-Knowledge Identity Vault
+Instead of hallucinating PII or sending sensitive user data to the backend LLM, LensAgent features a local Identity Vault (`chrome.storage.local`). Users can pre-fill their details (Name, Email, Phone, etc.). When the AI navigates a form, it outputs abstract tokens (e.g., `<VAULT_EMAIL>`). The local extension intercepts these tokens, detokenizes them using the Vault, and types the real data via CDP. The AI backend *never* sees the real data.
+
+### 12. Human-in-the-Loop (HITL) Fallback
+For abstract data or OTPs not in the Vault, the agent gracefully degrades to HITL mode. It pauses execution, overlays a chat prompt on the extension UI ("What is your Mother's Maiden Name?"), and waits for the user's input. The user can optionally check "Save to Vault", allowing the agent to self-learn and auto-fill this data in the future.
+
+### 13. Just-In-Time (JIT) Action Approval
+Destructive or high-risk actions (e.g., "Transfer ₹50,000", "Delete Account") trigger a JIT Approval Modal. The agent halts and flashes the GUI, requiring explicit human consent before the CDP executes the synthetic click.
+
 ## Cross-Browser Compatibility
 
 ### Chrome / Chromium (Primary Target)
@@ -196,6 +205,11 @@ This is documented as a **future enhancement path**, not a current capability.
 WebGPU now ships by default across Chrome, Edge, Firefox, and Safari. The vision model side of LensAgent does not have cross-browser issues. A WASM fallback is planned for older devices and Linux Firefox where GPU support is still limited.
 
 ## Changelog
+
+### 2026-08-30 v5.1 — Progressive Autonomy (Vault & HITL)
+- **vault.js**: Created `VaultManager` for Zero-Knowledge Identity tokenization. AI backend predicts `<VAULT_PHONE>`, local CDP types real phone number.
+- **popup.js/html/css**: Added Vault Settings tab. Added HITL Chat Overlay for unknown info requests. Added JIT Approval Modal for destructive actions.
+- **agent-loop.js**: Integrated `this.hitlResolver` and `this.approvalResolver` to pause the perception loop dynamically. Added automatic `detokenize()` intercept on all `TYPE` actions.
 
 ### 2026-08-30 v5.0 — Security Hardening & Architectural Upgrades (Member 1)
 - **agent-loop.js**: Implemented **Fail-Closed Security Architecture** — PII scan, redaction, and output validation each have independent try/catch blocks. If ANY step fails, the raw frame is dropped (never sent to network). Added `[FAIL-CLOSED]` audit-trail logging for every drop. Added output validation guard (redacted image must be >100 bytes).

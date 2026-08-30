@@ -18,6 +18,7 @@ import { CaptureEngine } from "../lib/capture.js";
 import { ActionExecutor } from "../lib/action-executor.js";
 import { AgentLoop } from "../lib/agent-loop.js";
 import * as storage from "../lib/storage.js";
+import { VaultManager } from "../lib/vault.js";
 import {
   POPUP_START_AGENT, POPUP_STOP_AGENT, POPUP_GET_STATUS,
   POPUP_GET_HISTORY, POPUP_EXPORT_LOG,
@@ -25,7 +26,13 @@ import {
   BG_AGENT_STATUS, BG_SETTINGS_UPDATED, BG_SESSION_HISTORY,
   AgentState, PORT_OFFSCREEN,
   HEARTBEAT_PING, ALARM_KEEPALIVE, HEARTBEAT_INTERVAL,
+  POPUP_VAULT_GET, POPUP_VAULT_SET, POPUP_VAULT_DELETE, POPUP_VAULT_FLUSH,
+  POPUP_HITL_RESPONSE, POPUP_APPROVAL_RESPONSE
 } from "../lib/message-types.js";
+
+// Initialize Vault
+const vaultManager = new VaultManager();
+await vaultManager.initialize();
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GLOBAL STATE
@@ -199,6 +206,32 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case POPUP_EXPORT_LOG:
       storage.exportLogsAsText().then((text) => sendResponse({ text }));
       return true;
+
+    case POPUP_VAULT_GET:
+      vaultManager.getAllEntries().then(sendResponse);
+      return true;
+
+    case POPUP_VAULT_SET:
+      vaultManager.setEntry(msg.key, msg.value).then(() => sendResponse({status: "OK"}));
+      return true;
+
+    case POPUP_VAULT_DELETE:
+      vaultManager.removeEntry(msg.key).then(() => sendResponse({status: "OK"}));
+      return true;
+
+    case POPUP_VAULT_FLUSH:
+      vaultManager.flush().then(() => sendResponse({status: "OK"}));
+      return true;
+
+    case POPUP_HITL_RESPONSE:
+      if (activeAgent) activeAgent.handleHitlResponse(msg);
+      sendResponse({status: "OK"});
+      return false;
+
+    case POPUP_APPROVAL_RESPONSE:
+      if (activeAgent) activeAgent.handleApprovalResponse(msg);
+      sendResponse({status: "OK"});
+      return false;
   }
 });
 
@@ -302,6 +335,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       captureEngine,
       actionExecutor,
       offscreenPort,
+      vaultManager,
       backendUrl:       settings.backendUrl,
       maxSteps:         settings.maxSteps,
       stabilizeDelayMs: settings.stabilizeDelayMs,
