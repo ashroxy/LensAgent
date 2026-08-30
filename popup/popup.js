@@ -119,6 +119,10 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
     const target = btn.dataset.tab;
     document.getElementById(`tab-${target}`).classList.add("active");
 
+    const titles = { agent: "Agent Dashboard", settings: "System Settings", history: "Session History", vault: "Identity Vault" };
+    const headerTitle = document.getElementById("headerTitle");
+    if (headerTitle) headerTitle.textContent = titles[target] || "LensAgent";
+
     // Load data when switching to settings or history
     if (target === "settings") loadSettingsUI();
     if (target === "history") loadHistoryUI();

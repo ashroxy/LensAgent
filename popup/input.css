@@ -1,0 +1,131 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    /* Core Neumorphic Utilities */
+    .neu-flat {
+        background: #f7f9fd;
+        box-shadow: 6px 6px 14px #dce1eb, -6px -6px 14px #ffffff;
+    }
+    .neu-flat:active {
+        box-shadow: inset 4px 4px 8px #dce1eb, inset -4px -4px 8px #ffffff;
+    }
+    .neu-pressed, .neu-recessed, .neo-recessed {
+        background: #f7f9fd;
+        box-shadow: inset 6px 6px 12px #dce1eb, inset -6px -6px 12px #ffffff;
+    }
+    .neu-extruded, .neo-extruded {
+        box-shadow: -8px -8px 16px #ffffff, 8px 8px 16px #d8dade;
+    }
+    
+    /* Buttons */
+    .neu-btn, .neu-btn-secondary, .neo-button-ext {
+        background: #f7f9fd;
+        box-shadow: 4px 4px 10px #dce1eb, -4px -4px 10px #ffffff;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .neu-btn:hover, .neu-btn-secondary:hover, .neo-button-ext:hover {
+        box-shadow: 6px 6px 12px #dce1eb, -6px -6px 12px #ffffff;
+        transform: translateY(-1px);
+    }
+    .neu-btn:active, .neu-btn-secondary:active, .neo-button-ext:active, .neu-interactive:active {
+        box-shadow: inset 4px 4px 8px #dce1eb, inset -4px -4px 8px #ffffff;
+        transform: translateY(1px);
+    }
+
+    .neu-btn-primary, .neo-button-primary {
+        background: linear-gradient(145deg, #e5edff, #c0d3fa);
+        box-shadow: 4px 4px 10px #dce1eb, -4px -4px 10px #ffffff;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .neu-btn-primary:hover, .neo-button-primary:hover {
+        box-shadow: 6px 6px 12px #dce1eb, -6px -6px 12px #ffffff;
+        transform: translateY(-1px);
+    }
+    .neu-btn-primary:active, .neo-button-primary:active {
+        box-shadow: inset 4px 4px 8px #b1c8f5, inset -4px -4px 8px #ffffff;
+        transform: translateY(1px);
+    }
+
+    /* Cards */
+    .neo-card {
+        box-shadow: -8px -8px 16px #ffffff, 8px 8px 16px #d1d9e6;
+    }
+
+    /* Nav Items */
+    .nav-btn {
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .nav-btn::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 0;
+        width: 4px;
+        background-color: #305f9f;
+        border-radius: 0 4px 4px 0;
+        transition: height 0.2s ease;
+    }
+    .nav-btn.active {
+        color: #305f9f;
+        background: rgba(137, 180, 250, 0.1);
+        font-weight: bold;
+    }
+    .nav-btn.active::before {
+        height: 24px;
+    }
+    .nav-btn:hover:not(.active) {
+        background: rgba(137, 180, 250, 0.05);
+    }
+    .nav-btn .material-symbols-outlined { transition: color 0.2s; }
+    .nav-btn.active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+
+    /* Custom Toggle Switch */
+    .neu-toggle-input:checked + .neu-toggle-bg {
+        background-color: #d5e3ff;
+    }
+    .neu-toggle-input:checked + .neu-toggle-bg .neu-toggle-knob {
+        transform: translateX(100%);
+        background-color: #305f9f;
+    }
+}
+
+/* Base Body Styles */
+body {
+    width: 800px;
+    height: 600px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #d8dade;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #c3c6d2;
+}
+
+/* Ensure hidden works */
+[hidden], .hidden {
+    display: none !important;
+}
+
+/* Tab logic */
+.tab-content { display: none !important; }
+.tab-content.active { display: flex !important; animation: fadeIn 200ms ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
