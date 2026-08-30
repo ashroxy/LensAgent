@@ -95,28 +95,15 @@ async function ensureOffscreenDocument() {
   // If port is already active and alive, nothing to do
   if (offscreenPort) return;
 
-  let hasDoc = false;
-  if (chrome.offscreen?.hasDocument) {
-    hasDoc = await chrome.offscreen.hasDocument();
-  } else if (chrome.runtime?.getContexts) {
-    try {
-      const contexts = await chrome.runtime.getContexts({
-        contextTypes: ["OFFSCREEN_DOCUMENT"],
-      });
-      hasDoc = contexts.length > 0;
-    } catch (_) {}
-  }
-
-  // If document exists but port is NOT connected (stale/zombie), close it so we can re-create
-  if (hasDoc && !offscreenPort) {
-    console.log("[SW] Cleaning up stale offscreen document...");
-    try {
-      await chrome.offscreen.closeDocument();
-      // Give Chrome a moment to fully tear down the old document context
-      await new Promise(r => setTimeout(r, 250));
-    } catch (e) {
-      console.warn("[SW] Failed closing stale offscreen doc:", e);
-    }
+  // Because offscreenPort is null, we assume any existing document is a zombie.
+  // Unconditionally close it to ensure a clean slate, bypassing buggy hasDocument() checks.
+  console.log("[SW] Ensuring clean offscreen state...");
+  try {
+    await chrome.offscreen.closeDocument();
+    // Crucial: Give Chrome time to fully destroy the context before recreation
+    await new Promise(r => setTimeout(r, 250));
+  } catch (e) {
+    // Ignore error if no document actually existed
   }
 
   // If creation is currently in progress, await active promise
