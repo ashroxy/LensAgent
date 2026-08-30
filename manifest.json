@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LensAgent â€” Privacy-Preserving Visual Browser Agent",
+  "name": "LensAgent - Privacy-Preserving Visual Browser Agent",
   "short_name": "LensAgent",
   "version": "1.0.0",
   "offline_enabled": true,

@@ -10,7 +10,7 @@
  *     Token format: [SYS_PAN_01]
  *   - This is DISTINCT from lib/vault.js (chrome.storage, user identity, INBOUND).
  *     Token format: <VAULT_EMAIL>
- *   - The two vaults NEVER collide — different prefixes, different scopes.
+ *   - The two vaults NEVER collide - different prefixes, different scopes.
  */
 
 export class SessionVaultManager {

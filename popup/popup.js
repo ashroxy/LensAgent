@@ -1,5 +1,5 @@
-﻿/**
- * popup.js â€” LensAgent Popup Controller (Enhanced)
+/**
+ * popup.js - LensAgent Popup Controller (Enhanced)
  * ===================================================
  * Handles:
  *   1. Start/Stop agent with settings passthrough
@@ -144,7 +144,7 @@ const btnPopout = document.getElementById("btnPopout");
 
 (async () => {
   if (isPopoutMode || window.matchMedia("(min-width: 801px)").matches) {
-    // We're likely in a full tab â€” resolve the target tab now
+    // We're likely in a full tab - resolve the target tab now
     const allTabs = await chrome.tabs.query({ currentWindow: true });
     const webTab = allTabs.find(t => !t.active && !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"))
       || allTabs.find(t => !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"));
@@ -182,7 +182,7 @@ startBtn.addEventListener("click", async () => {
     stopBtn.disabled = false;
     goalInput.disabled = true;
     setState(AgentState.RUNNING);
-    addLog(`Agent started â€” Goal: "${goal}"`, "action");
+    addLog(`Agent started - Goal: "${goal}"`, "action");
     if (resp.dpr) if (dprDisplayEl) dprDisplayEl.textContent = `DPR: ${resp.dpr}`;
     latencyHistory = [];
   } else {
@@ -965,7 +965,7 @@ const btnRawFullscreen = document.getElementById("btnRawFullscreen");
 const btnSanitizedFullscreen = document.getElementById("btnSanitizedFullscreen");
 const fullscreenModal = document.getElementById("fullscreenModal");
 const btnCloseModal = document.getElementById("btnCloseModal");
-const modalTitle = document.getElementById("modalTitle");
+// modalTitle already declared
 const modalFeed = document.getElementById("modalFeed");
 
 let activeFullscreenInterval = null;

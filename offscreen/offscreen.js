@@ -1,5 +1,5 @@
 /**
- * offscreen.js â€” Perception & Redaction Engine (Offscreen Document)
+ * offscreen.js - Perception & Redaction Engine (Offscreen Document)
  * ==================================================================
  * Runs inside MV3 Offscreen Document with full DOM, Canvas 2D, and WebGPU access.
  *
@@ -64,7 +64,7 @@ let perfAccum = {
 
 async function initWebGPU() {
   if (!navigator.gpu) {
-    console.warn("[Offscreen] WebGPU not available â€” falling back to Canvas 2D.");
+    console.warn("[Offscreen] WebGPU not available - falling back to Canvas 2D.");
     gpuStatus = WebGPUStatus.UNAVAILABLE;
     reportGPUStatus();
     return false;
@@ -269,7 +269,7 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
 }
 
 /**
- * Set-of-Mark (SoM) Prompting â€” Microsoft Research (arXiv:2310.11441)
+ * Set-of-Mark (SoM) Prompting - Microsoft Research (arXiv:2310.11441)
  * ====================================================================
  * Annotates each detected UI element with a numbered SoM ID so the
  * AI model can reference elements by ID ("Click element 3") instead of
@@ -370,5 +370,5 @@ function fallbackResult() {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 initWebGPU();
-console.log("[Offscreen] Perception engine initialized â€” Member 3 PrivacyEngine active (real PII redaction).");
+console.log("[Offscreen] Perception engine initialized - Member 3 PrivacyEngine active (real PII redaction).");
 

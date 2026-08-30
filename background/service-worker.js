@@ -1,5 +1,5 @@
 ﻿/**
- * service-worker.js â€” MV3 Background Service Worker (Enhanced)
+ * service-worker.js - MV3 Background Service Worker (Enhanced)
  * ==============================================================
  * Central orchestrator that wires all subsystems together.
  *
@@ -186,7 +186,7 @@ chrome.runtime.onConnect.addListener((port) => {
 chrome.tabs.onActivated.addListener((activeInfo) => {
   if (activeAgent && activeAgent.state === AgentState.RUNNING && activeTabId) {
     if (activeInfo.tabId !== activeTabId) {
-      // User switched to a different tab â€” don't auto-stop, just note it
+      // User switched to a different tab - don't auto-stop, just note it
       console.log("[SW] User switched tabs during agent run. Agent continues on original tab.");
     }
   }
@@ -291,7 +291,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
     const settings = await storage.loadSettings();
     if (settingsOverride) Object.assign(settings, settingsOverride);
 
-    // Get target tab â€” if a specific tabId was passed (from pop-out mode), use that.
+    // Get target tab - if a specific tabId was passed (from pop-out mode), use that.
     // Otherwise fall back to the active tab in the current window.
     let tab;
     if (targetTabId) {
@@ -363,8 +363,8 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       broadcastToPopup(BG_AGENT_STATUS, {
         state:   AgentState.PAUSED,
         message: reason === "canceled_by_user"
-          ? "Agent paused â€” you opened Chrome DevTools. Close DevTools and restart."
-          : `Agent paused â€” debugger detached (${reason}).`,
+          ? "Agent paused - you opened Chrome DevTools. Close DevTools and restart."
+          : `Agent paused - debugger detached (${reason}).`,
       });
     });
 

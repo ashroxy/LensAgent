@@ -4,11 +4,11 @@
 Build a privacy-preserving vision agent that runs in the browser. A local Vision Transformer reads the user's screen, sanitizes sensitive/PII data using DOM tags or other methods, and sends only anonymized structural data to a server. The server processes the sanitized context and returns actionable browser commands (click, type, scroll) that the local client executes autonomously.
 
 ## Evaluation Metrics (ISRO)
-1. Accuracy of visual context from screen — 25%
-2. Recall and precision for detection of sensitive/PII data — 20%
-3. Precision of redaction — 20%
-4. Client-side resource utilization — 20%
-5. End-to-end latency of provided task — 15%
+1. Accuracy of visual context from screen - 25%
+2. Recall and precision for detection of sensitive/PII data - 20%
+3. Precision of redaction - 20%
+4. Client-side resource utilization - 20%
+5. End-to-end latency of provided task - 15%
 
 ## Team & Roles
 | Member | Role | Responsibility |
@@ -49,7 +49,7 @@ Build a privacy-preserving vision agent that runs in the browser. A local Vision
 |  - Full DOM/WebGL/WebGPU access                        |
 |  NOTE: Only 1 offscreen doc per extension.             |
 +-------------------------------------------------------+
-        |  fetch() — sanitized payload only
+        |  fetch() - sanitized payload only
         v
 +-------------------------------------------------------+
 |              BACKEND VLM SERVER [Member 4]             |
@@ -91,7 +91,7 @@ SIH-171/
   "host_permissions": ["http://*/*", "https://*/*"],
   "minimum_chrome_version": "118"
 
-### Content Security Policy (Dual CSP — Network Gagged Privacy Sandbox)
+### Content Security Policy (Dual CSP - Network Gagged Privacy Sandbox)
   ```json
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self'",
@@ -100,12 +100,12 @@ SIH-171/
   "sandbox": { "pages": ["offscreen/offscreen.html"] }
   ```
   - `extension_pages` CSP: allows WASM (for ONNX Runtime Web) and self-hosted scripts only.
-  - `sandbox` CSP: **`connect-src 'none'`** — the offscreen document (where all PII data exists) is mathematically forbidden from making ANY network requests. Even if malicious code were injected, `fetch()` and `XMLHttpRequest` would throw `NetworkError`. This is an enforceable guarantee, not a convention.
+  - `sandbox` CSP: **`connect-src 'none'`** - the offscreen document (where all PII data exists) is mathematically forbidden from making ANY network requests. Even if malicious code were injected, `fetch()` and `XMLHttpRequest` would throw `NetworkError`. This is an enforceable guarantee, not a convention.
   - This Fail-Closed CSP design means the redaction engine operates in a true air-gapped sandbox.
 
 ### API Rate Limits and Constraints
-- chrome.tabs.captureVisibleTab: Hard limit 2 calls/second — **NOT USED** (too slow)
-- **Page.startScreencast via chrome.debugger**: Push-based, continuous ~30 FPS — **USED**
+- chrome.tabs.captureVisibleTab: Hard limit 2 calls/second - **NOT USED** (too slow)
+- **Page.startScreencast via chrome.debugger**: Push-based, continuous ~30 FPS - **USED**
 - Service worker: 30s idle timeout → mitigated by dual keep-alive (alarm + port heartbeat)
 - Offscreen document: Only 1 allowed per extension at a time → crash recovery implemented
 - Debugger shows yellow "debugging" banner to user → explained in popup UI
@@ -118,8 +118,8 @@ SIH-171/
 | **`Page.startScreencast` (CDP)** | **10–25ms** | **Push-based ~30 FPS** | **✅** |
 
 ### Action Execution via chrome.debugger
-- Input.dispatchMouseEvent — click, hover, scroll (mouseWheel)
-- Input.dispatchKeyEvent — type text, special keys
+- Input.dispatchMouseEvent - click, hover, scroll (mouseWheel)
+- Input.dispatchKeyEvent - type text, special keys
 - Must send both mousePressed + mouseReleased for clicks
 - Characters need keyDown + keyUp pairs
 - **All coordinates normalized by dynamic DPR** (fetched via Runtime.evaluate at session start)
@@ -129,10 +129,10 @@ SIH-171/
 - Service worker ↔ popup: chrome.runtime.sendMessage (fire-and-forget)
 - Service worker ↔ server: fetch()
 
-## Innovations (Member 1 — Infrastructure Layer)
+## Innovations (Member 1 - Infrastructure Layer)
 
 ### 1. CDP Screencast with Adaptive Backpressure
-The capture engine uses `Page.screencastFrameAck` as a natural backpressure valve. Frames are only consumed when the agent loop is idle. If WebGPU inference is still running, incoming frames are silently dropped — no queue buildup, no memory bloat.
+The capture engine uses `Page.screencastFrameAck` as a natural backpressure valve. Frames are only consumed when the agent loop is idle. If WebGPU inference is still running, incoming frames are silently dropped - no queue buildup, no memory bloat.
 
 ### 2. Delta-Frame Detection (Foveated Attention)
 Before sending frames to the offscreen worker, a fast DJB2 hash is computed over a sampled subset of the base64 string (~0.1ms). If the hash matches the previous frame (page hasn't visually changed), the entire inference cycle is skipped. This saves ~50ms of GPU compute per skipped frame and is critical for static-page scenarios like form fills.
@@ -183,10 +183,10 @@ Destructive or high-risk actions (e.g., "Transfer ₹50,000", "Delete Account") 
 
 ### Chrome / Chromium (Primary Target)
 LensAgent is architected as a **Chrome-first extension**. The entire automation pipeline depends on the `chrome.debugger` API, which exposes the Chrome DevTools Protocol (CDP) for:
-- `Page.startScreencast` — push-based 30fps frame delivery
-- `Input.dispatchMouseEvent` / `Input.dispatchKeyEvent` — synthetic input
-- `Accessibility.getFullAXTree` — full accessibility tree extraction
-- `Runtime.evaluate` — DOM PII scanning with bounding box extraction
+- `Page.startScreencast` - push-based 30fps frame delivery
+- `Input.dispatchMouseEvent` / `Input.dispatchKeyEvent` - synthetic input
+- `Accessibility.getFullAXTree` - full accessibility tree extraction
+- `Runtime.evaluate` - DOM PII scanning with bounding box extraction
 
 This works identically on all Chromium-based browsers: **Chrome, Edge, Brave, Opera, Arc**.
 
@@ -206,19 +206,19 @@ WebGPU now ships by default across Chrome, Edge, Firefox, and Safari. The vision
 
 ## Changelog
 
-### 2026-08-30 v5.1 — Progressive Autonomy (Vault & HITL)
+### 2026-08-30 v5.1 - Progressive Autonomy (Vault & HITL)
 - **vault.js**: Created `VaultManager` for Zero-Knowledge Identity tokenization. AI backend predicts `<VAULT_PHONE>`, local CDP types real phone number.
 - **popup.js/html/css**: Added Vault Settings tab. Added HITL Chat Overlay for unknown info requests. Added JIT Approval Modal for destructive actions.
 - **agent-loop.js**: Integrated `this.hitlResolver` and `this.approvalResolver` to pause the perception loop dynamically. Added automatic `detokenize()` intercept on all `TYPE` actions.
 
-### 2026-08-30 v5.0 — Security Hardening & Architectural Upgrades (Member 1)
-- **agent-loop.js**: Implemented **Fail-Closed Security Architecture** — PII scan, redaction, and output validation each have independent try/catch blocks. If ANY step fails, the raw frame is dropped (never sent to network). Added `[FAIL-CLOSED]` audit-trail logging for every drop. Added output validation guard (redacted image must be >100 bytes).
-- **manifest.json**: Added **Air-Gapped Sandbox CSP** — `connect-src 'none'` on the offscreen document, mathematically preventing any network egress from the privacy sandbox. Added `sandbox.pages` declaration for `offscreen/offscreen.html`.
-- **offscreen.js**: Implemented **Set-of-Mark (SoM) Prompting** (arXiv:2310.11441) — each structural element is annotated with `som_id` and `som_label` so the AI model references elements by ID instead of pixel coordinates. Added as a top-level `applySetOfMark()` function.
-- **action-executor.js**: Unified JIT Regex Engine — compiled 8 separate PII patterns into a single O(1) regex using capture-group indexing for category identification.
+### 2026-08-30 v5.0 - Security Hardening & Architectural Upgrades (Member 1)
+- **agent-loop.js**: Implemented **Fail-Closed Security Architecture** - PII scan, redaction, and output validation each have independent try/catch blocks. If ANY step fails, the raw frame is dropped (never sent to network). Added `[FAIL-CLOSED]` audit-trail logging for every drop. Added output validation guard (redacted image must be >100 bytes).
+- **manifest.json**: Added **Air-Gapped Sandbox CSP** - `connect-src 'none'` on the offscreen document, mathematically preventing any network egress from the privacy sandbox. Added `sandbox.pages` declaration for `offscreen/offscreen.html`.
+- **offscreen.js**: Implemented **Set-of-Mark (SoM) Prompting** (arXiv:2310.11441) - each structural element is annotated with `som_id` and `som_label` so the AI model references elements by ID instead of pixel coordinates. Added as a top-level `applySetOfMark()` function.
+- **action-executor.js**: Unified JIT Regex Engine - compiled 8 separate PII patterns into a single O(1) regex using capture-group indexing for category identification.
 - **README.md**: Added Cross-Browser Compatibility section (Chrome-first, Firefox limitations documented), updated CSP documentation, added 3 new innovation entries.
 
-### 2026-08-29 v4.1 — UI Overhaul & Edge Case Fixes (Member 1)
+### 2026-08-29 v4.1 - UI Overhaul & Edge Case Fixes (Member 1)
 - **popup.html/css/js**: Fullscreen video modal with edge-to-edge canvas, structured history cards with status badges, expand buttons on video panels, Esc-to-close support.
 - **popup.html**: Fixed duplicate unit suffixes (ms ms, % %).
 - **popup.js**: Pop-out mode smart tab targeting, dynamic canvas resolution, bbox format normalization.
@@ -232,7 +232,7 @@ Message sent over `chrome.runtime.Port` named `PORT_OFFSCREEN_PERCEPTION`:
   "type": "BG_PROCESS_FRAME",
   "correlationId": "frame_5_1693000000",
   "rawBase64": "<base64 JPEG string>",
-  "buffer": "<ArrayBuffer — Transferable>"
+  "buffer": "<ArrayBuffer - Transferable>"
 }
 ```
 
@@ -257,14 +257,14 @@ Message sent over `chrome.runtime.Port` named `PORT_OFFSCREEN_PERCEPTION`:
 File: `offscreen/offscreen.js` → function `extractStructuralElements(ctx, width, height)`
 - **Input**: Canvas 2D context with frame drawn, canvas dimensions
 - **Output**: Array of `{ id, type, bbox: [x, y, w, h], confidence, label }`
-- Currently returns mock data — replace with ONNX Runtime Web inference
+- Currently returns mock data - replace with ONNX Runtime Web inference
 
 ### Member 3 Integration Point
 File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, height)`
 - **Input**: Canvas 2D context with frame drawn, canvas dimensions
 - **Output**: Array of `{ type, bbox: [x, y, w, h] }`
 - **Side effect**: Must draw solid black rectangles over PII regions on the canvas
-- Currently returns mock data — replace with real regex + NER detection
+- Currently returns mock data - replace with real regex + NER detection
 
 ## Server Communication Schema
 
@@ -309,25 +309,25 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 }
 ```
 
-## My Deliverables (Member 1) — Implementation Progress
+## My Deliverables (Member 1) - Implementation Progress
 
-- [x] `manifest.json` — MV3 manifest with CSP for WASM, offline_enabled, short_name
-- [x] `lib/message-types.js` — Centralized constants, enums, default settings, shared numeric constants
-- [x] `lib/storage.js` — Session + local storage, settings, history, metrics, log export
-- [x] `lib/capture.js` — CDP screencast + adaptive quality + delta-frame + FPS monitoring + zero-copy
-- [x] `lib/action-executor.js` — CDP input synthesis + DPR + jitter + retry + double-click + drag + select
-- [x] `lib/agent-loop.js` — Epoch-gated orchestrator + exponential backoff + per-stage profiling + history
-- [x] `background/service-worker.js` — Orchestrator + settings mgmt + tab detection + crash recovery
-- [x] `offscreen/offscreen.html` + `offscreen.js` — WebGPU init + warm-up + Cache API + async export + mocks
-- [x] `popup/popup.html` + `popup.css` + `popup.js` — Tabbed UI + sparkline + settings + history + export
-- [x] `assets/icons/` — Generated icon16.png, icon48.png, icon128.png (shield + eye design)
+- [x] `manifest.json` - MV3 manifest with CSP for WASM, offline_enabled, short_name
+- [x] `lib/message-types.js` - Centralized constants, enums, default settings, shared numeric constants
+- [x] `lib/storage.js` - Session + local storage, settings, history, metrics, log export
+- [x] `lib/capture.js` - CDP screencast + adaptive quality + delta-frame + FPS monitoring + zero-copy
+- [x] `lib/action-executor.js` - CDP input synthesis + DPR + jitter + retry + double-click + drag + select
+- [x] `lib/agent-loop.js` - Epoch-gated orchestrator + exponential backoff + per-stage profiling + history
+- [x] `background/service-worker.js` - Orchestrator + settings mgmt + tab detection + crash recovery
+- [x] `offscreen/offscreen.html` + `offscreen.js` - WebGPU init + warm-up + Cache API + async export + mocks
+- [x] `popup/popup.html` + `popup.css` + `popup.js` - Tabbed UI + sparkline + settings + history + export
+- [x] `assets/icons/` - Generated icon16.png, icon48.png, icon128.png (shield + eye design)
 - [x] End-to-end integration test with Member 4's server (Verified via `testing/mock-server.js` sandbox)
 - [ ] Member 2 integration: replace `extractStructuralElements()` with ONNX Runtime Web
 - [x] Member 3 integration: replace `detectAndRedactPII()` with regex + NER (Integrated via `PrivacyEngine` API)
 
 ## Tech Stack
 - Chrome Extension Manifest V3
-- Vanilla JavaScript ES Modules (zero framework — minimal bundle)
+- Vanilla JavaScript ES Modules (zero framework - minimal bundle)
 - JSDoc Type Contracts (IDE-enforced TypeScript without the build step)
 - Chrome DevTools Protocol (CDP) via `chrome.debugger`
 - `Page.startScreencast` for push-based frame delivery (~30 FPS)
@@ -340,26 +340,26 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 - Box-Muller transform for Gaussian jitter generation
 
 ## Target Demo Task
-"Login → Search → Filter → Download" — a multi-step autonomous workflow demonstrating end-to-end browser automation with privacy-preserving redaction.
+"Login → Search → Filter → Download" - a multi-step autonomous workflow demonstrating end-to-end browser automation with privacy-preserving redaction.
 
 
 ### 2026-08-26 v4.0 - UI Pro Max & Real Privacy Engine (Member 1)
 - **popup.html & popup.css**: Completely redesigned the UI using native CSS to replicate a world-class "Operate Mode" developer dashboard. Features a Sky Blue dark theme, a 3-column Bento grid for metrics, side-by-side video feeds, and a terminal action log.
 - **privacy_engine.js & accessibility_sanitizer.js**: Successfully integrated Member 3's real Privacy Engine code! Automatically converted their Node.js CJS exports into standard ES Modules. Fixed a trailing module.exports bug that was crashing the offscreen document.
 - **Testing Sandboxes**: Built complex-sandbox.html and extreme-sandbox.html (1000 nodes, 30fps animation) to successfully stress test the Tri-Stream CDP extraction and delta-frame rendering.
-### 2026-08-26 v3.1 — Tri-Stream Architecture (Member 1)
+### 2026-08-26 v3.1 - Tri-Stream Architecture (Member 1)
 - **action-executor.js**: Added `getAccessibilityTree()` (CDP `Accessibility.enable` + `Accessibility.getFullAXTree`, filtered to interactive roles, strictly capped at 150 nodes for local models) and `getDOMSnapshot()` (CDP `Runtime.evaluate` querying interactive elements with bounding boxes and text, capped at 150 nodes).
 - **agent-loop.js**: Updated `_requestServerAction()` to extract A11y tree and DOM snapshot in parallel via `Promise.all`, then bundle them into the server payload as `a11y_tree` and `dom_snapshot` streams alongside the existing visual stream.
 - **mock-server.js**: Updated to log A11y tree and DOM snapshot node counts for verification.
 - **README.md**: Updated Server Communication Schema to document the full Tri-Stream payload format.
 
-### 2026-08-25 v3 — Strict Types, Member 3 API & Sandbox (Member 1)
+### 2026-08-25 v3 - Strict Types, Member 3 API & Sandbox (Member 1)
 - **message-types.js**: Injected strict JSDoc Type Contracts (Path B) to enforce data boundaries (`BoundingBox`, `PerceptionResult`, `AgentAction`, `ServerDecision`) for the entire team without needing a build step.
 - **offscreen.js**: Refactored the processing pipeline to integrate Member 3's exact object-oriented API (`PrivacyEngine.sanitizeViewport()`), automatically mapping its output back to the team's data contract.
 - **agent-loop.js**: Added strict JSDoc definitions to the FastAPI HTTP bridge.
 - **Testing Sandbox**: Created a zero-dependency local Node.js environment (`testing/mock-server.js` + `testing/test-sandbox.html`) to independently verify the CDP Action Executor, effectively proving end-to-end resilience (including high-DPI scaling) without relying on Member 4's backend.
 
-### 2026-08-24 v2 — Full Enhancement Pass (Member 1)
+### 2026-08-24 v2 - Full Enhancement Pass (Member 1)
 - **message-types.js**: Added new action types (DOUBLE_CLICK, HOVER, DRAG, SELECT, BACK), ConnectionQuality enum, WebGPUStatus enum, DEFAULT_SETTINGS object, shared numeric constants
 - **storage.js**: Added persistent settings (chrome.storage.local), session history with capped entries, performance metrics accumulation (running avg/min/max), action log buffer with text export
 - **capture.js**: Added adaptive JPEG quality scaling under load (auto-restarts screencast), FPS monitoring via rolling window, connection quality assessment, forced-frame-through after 30 consecutive skips, byte throughput tracking
@@ -371,7 +371,7 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 - **icons**: Generated 16x16, 48x48, 128x128 PNG icons (shield + eye design in blue-indigo gradient)
 - **manifest.json**: Added short_name, offline_enabled
 
-### 2026-08-24 v1 — Initial Infrastructure Build (Member 1)
+### 2026-08-24 v1 - Initial Infrastructure Build (Member 1)
 - Created complete MV3 manifest with WASM CSP support
 - Built CDP screencast engine with adaptive backpressure, delta-frame detection (DJB2 hash), and zero-copy ArrayBuffer conversion
 - Built action executor with dynamic DPR normalization, Gaussian jitter, variable-cadence typing, and coordinate validation via DOM.getNodeForLocation
@@ -381,12 +381,12 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 - Created offscreen document with clearly marked integration points for Member 2 (WebGPU Vision) and Member 3 (Privacy Engine)
 - Defined integration contract: exact message types, payload shapes, and function signatures for teammate modules
 
-### 2026-08-30 v5.2 — Member 3 Privacy Engine Integration
+### 2026-08-30 v5.2 - Member 3 Privacy Engine Integration
 - **Integrated `offscreen/privacy_engine.js`** (Member 3): Real PII detection and canvas redaction replacing the mock stub. Handles Aadhaar, PAN, Indian phone, credit card, email, UPI, passport, driving licence, PERSON NER, and ISRO/DRDO CONFIDENTIAL NER patterns.
 - **Integrated `offscreen/vault_manager.js`** (Member 3, `SessionVaultManager`): Session-scoped in-RAM bidirectional tokenizer. Converts observed page PII to `[SYS_PAN_01]` aliases before the LLM sees them. Distinct from user identity `lib/vault.js` (`<VAULT_EMAIL>` tokens).
-- **Integrated `offscreen/accessibility_sanitizer.js`** (Member 3): Sanitizes AX tree node names/values/descriptions — fully redacts password/secure fields, and replaces PII regex matches with `[REDACTED_*]` tokens.
+- **Integrated `offscreen/accessibility_sanitizer.js`** (Member 3): Sanitizes AX tree node names/values/descriptions - fully redacts password/secure fields, and replaces PII regex matches with `[REDACTED_*]` tokens.
 - **Integrated `offscreen/accessibility_walker.js`** (Member 3): Shadow DOM-aware accessibility tree builder for CDP `Runtime.evaluate` page injection.
-- **Privacy Gate in `lib/agent-loop.js`**: AX tree is now sanitized via `AccessibilitySanitizer.sanitizeTree()` before the server payload is sent — the final PII defence before data leaves the browser.
+- **Privacy Gate in `lib/agent-loop.js`**: AX tree is now sanitized via `AccessibilitySanitizer.sanitizeTree()` before the server payload is sent - the final PII defence before data leaves the browser.
 - **Context-Aware Confidence Scoring**: False positive suppression using ±50 character context windows and domain-specific positive/negative keyword dictionaries.
 - **Zero-Leakage Payload Validator**: `validatePayload()` throws on any residual unmasked PII in strict mode (fail-closed).
 - Fixed ES module compatibility (`export class`) across all Member 3 files.

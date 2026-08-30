@@ -16,7 +16,7 @@
  *   The tokenMap is then included in the server payload so the LLM can
  *   reference elements by alias (e.g. "[SYS_EMAIL_01]") without seeing real PII.
  *
- *   Outgoing payload is guarded by validatePayload() — throws on leakage.
+ *   Outgoing payload is guarded by validatePayload() - throws on leakage.
  */
 
 import { SessionVaultManager } from './vault_manager.js';
@@ -47,10 +47,10 @@ export class PrivacyEngine {
 
     this.sensitiveKeywords = /password|cvv|otp|pin|aadhaar|pan|card|secret|token|ssn|license/i;
 
-    // Session vault — in-RAM only, tokenizes page PII → [SYS_*] aliases for LLM
+    // Session vault - in-RAM only, tokenizes page PII → [SYS_*] aliases for LLM
     this.vault = new SessionVaultManager({ aliasPrefix: 'SYS' });
 
-    // Accessibility sanitizer — redacts PII in AX tree nodes before LLM sees them
+    // Accessibility sanitizer - redacts PII in AX tree nodes before LLM sees them
     this.a11ySanitizer = new AccessibilitySanitizer(this.patterns);
 
     this.telemetryHistory = [];
@@ -61,7 +61,7 @@ export class PrivacyEngine {
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
-   * sanitizeViewport — the main integration entry point.
+   * sanitizeViewport - the main integration entry point.
    *
    * Accepts a raw base64 screenshot + candidate element bounding boxes,
    * runs full DOM scan + canvas redaction, and returns a safe sanitized image.

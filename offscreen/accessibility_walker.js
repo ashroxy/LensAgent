@@ -3,7 +3,7 @@
  * Module: accessibility_walker.js
  *
  * NOTE: This module runs in PAGE CONTEXT via CDP Runtime.evaluate injection.
- * It is NOT an ES module — it uses a plain IIFE return pattern for CDP compatibility.
+ * It is NOT an ES module - it uses a plain IIFE return pattern for CDP compatibility.
  * When injecting, call: (function(){ <code>; return new AccessibilityWalker().buildTree(); })()
  */
 
@@ -112,7 +112,7 @@ export class AccessibilityWalker {
 }
 
 /**
- * CDP injection helper — returns the serialized tree string when evaluated in page context.
+ * CDP injection helper - returns the serialized tree string when evaluated in page context.
  * Usage: await Runtime.evaluate({ expression: getWalkerInjectionScript() })
  */
 export function getWalkerInjectionScript() {
