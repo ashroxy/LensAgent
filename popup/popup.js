@@ -1,5 +1,5 @@
-/**
- * popup.js — LensAgent Popup Controller (Enhanced)
+﻿/**
+ * popup.js â€” LensAgent Popup Controller (Enhanced)
  * ===================================================
  * Handles:
  *   1. Start/Stop agent with settings passthrough
@@ -27,18 +27,18 @@ import {
   AgentState, DEFAULT_SETTINGS,
 } from "../lib/message-types.js";
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // DOM REFS
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const $ = (id) => document.getElementById(id);
 
-const rawCanvas       = $("rawCanvas");
+const rawCanvas       = $("liveStream");
 const rawCtx          = rawCanvas.getContext("2d");
-const redactedCanvas  = $("redactedCanvas");
+const redactedCanvas  = $("annotatedStream");
 const redactedCtx     = redactedCanvas.getContext("2d");
 const sparkCanvas     = $("sparklineCanvas");
-const sparkCtx        = sparkCanvas.getContext("2d");
+const sparkCtx = sparkCanvas ? sparkCanvas.getContext("2d") : null;
 
 const startBtn        = $("startBtn");
 const stopBtn         = $("stopBtn");
@@ -51,24 +51,24 @@ const errorMsg        = $("errorMsg");
 const stepCountEl     = $("stepCount");
 const maxStepsEl      = $("maxSteps");
 const redactionCountEl = $("redactionCount");
-const latencyDisplayEl = $("latencyDisplay");
+const latencyDisplayEl = $("latencyMs");
 const fpsDisplayEl    = $("fpsDisplay");
 const frameCountEl    = $("frameCount");
 const skippedCountEl  = $("skippedCount");
 const qualityDisplayEl = $("qualityDisplay");
 const dprDisplayEl    = $("dprDisplay");
-const actionLogEl     = $("actionLog");
+const actionLogEl     = $("terminalBody");
 const exportLogBtn    = $("exportLogBtn");
 
 // Settings form
-const settBackendUrl     = $("settBackendUrl");
-const settMaxSteps       = $("settMaxSteps");
+const settBackendUrl     = $("setting-serverUrl");
+const settMaxSteps       = $("setting-maxSteps");
 const settCaptureQuality = $("settCaptureQuality");
-const settServerTimeout  = $("settServerTimeout");
+const settServerTimeout  = $("setting-timeout");
 const settStabilizeDelay = $("settStabilizeDelay");
-const settHumanize       = $("settHumanize");
-const settDeltaFrames    = $("settDeltaFrames");
-const settAuditStream    = $("settAuditStream");
+const settHumanize       = $("setting-jitter");
+const settDeltaFrames    = $("setting-delta");
+const settAuditStream    = $("setting-liveAudit");
 const saveSettingsBtn    = $("saveSettingsBtn");
 const resetSettingsBtn   = $("resetSettingsBtn");
 const settingsMsg        = $("settingsMsg");
@@ -95,9 +95,9 @@ const approvalDetail    = $("approvalDetail");
 const approvalApproveBtn = $("approvalApproveBtn");
 const approvalDenyBtn   = $("approvalDenyBtn");
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // STATE
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let currentState   = AgentState.IDLE;
 let latencyHistory = [];  // For sparkline
@@ -107,9 +107,9 @@ let pendingHitlCorrelationId = null;
 let pendingHitlVaultKey = null;
 let pendingApprovalCorrelationId = null;
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TAB NAVIGATION
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 document.querySelectorAll(".nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -130,9 +130,9 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // POP-OUT MODE DETECTION
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // If this page is opened as a full tab (not a popup), we are in "pop-out" mode.
 // In pop-out mode, Start Agent must target a real webpage tab, not this extension tab.
@@ -144,7 +144,7 @@ const btnPopout = document.getElementById("btnPopout");
 
 (async () => {
   if (isPopoutMode || window.matchMedia("(min-width: 801px)").matches) {
-    // We're likely in a full tab — resolve the target tab now
+    // We're likely in a full tab â€” resolve the target tab now
     const allTabs = await chrome.tabs.query({ currentWindow: true });
     const webTab = allTabs.find(t => !t.active && !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"))
       || allTabs.find(t => !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"));
@@ -163,9 +163,9 @@ if (btnPopout) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CONTROLS
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 startBtn.addEventListener("click", async () => {
   const goal = goalInput.value.trim();
@@ -182,8 +182,8 @@ startBtn.addEventListener("click", async () => {
     stopBtn.disabled = false;
     goalInput.disabled = true;
     setState(AgentState.RUNNING);
-    addLog(`Agent started — Goal: "${goal}"`, "action");
-    if (resp.dpr) dprDisplayEl.textContent = `DPR: ${resp.dpr}`;
+    addLog(`Agent started â€” Goal: "${goal}"`, "action");
+    if (resp.dpr) if (dprDisplayEl) dprDisplayEl.textContent = `DPR: ${resp.dpr}`;
     latencyHistory = [];
   } else {
     startBtn.disabled = false;
@@ -199,9 +199,9 @@ stopBtn.addEventListener("click", async () => {
   addLog("Agent stopped.", "warning");
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EXPORT LOG
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 exportLogBtn.addEventListener("click", async () => {
   const resp = await msg({ type: POPUP_EXPORT_LOG });
@@ -217,9 +217,9 @@ exportLogBtn.addEventListener("click", async () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INCOMING MESSAGES
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 chrome.runtime.onMessage.addListener((message) => {
   switch (message.type) {
@@ -244,9 +244,9 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // AUDIT FRAME RENDERER
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function renderAuditFrame(p) {
   redactionCountEl.textContent = p.redactedCount;
@@ -315,78 +315,78 @@ function drawBBoxes(ctx, elements, canvasW, canvasH) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SPARKLINE CHART
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function updateSparkline(latency) {
   latencyHistory.push(latency);
   if (latencyHistory.length > MAX_SPARKLINE) latencyHistory.shift();
 
-  const w = sparkCanvas.width;
-  const h = sparkCanvas.height;
+  if (!sparkCanvas) return;
+  const w = sparkCanvas.width; const h = sparkCanvas.height;
   const max = Math.max(50, ...latencyHistory);
 
-  sparkCtx.clearRect(0, 0, w, h);
+  if (sparkCtx) sparkCtx.clearRect(0, 0, w, h);
 
   // Grid line at 500ms
-  sparkCtx.strokeStyle = "#222222";
-  sparkCtx.lineWidth = 0.5;
+  if (sparkCtx) sparkCtx.strokeStyle = "#222222";
+  if (sparkCtx) sparkCtx.lineWidth = 0.5;
   const gridY = h - (500 / max) * (h - 8);
-  sparkCtx.beginPath();
-  sparkCtx.moveTo(0, gridY);
-  sparkCtx.lineTo(w, gridY);
-  sparkCtx.stroke();
+  if (sparkCtx) sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.moveTo(0, gridY);
+  if (sparkCtx) sparkCtx.lineTo(w, gridY);
+  if (sparkCtx) sparkCtx.stroke();
 
   if (latencyHistory.length < 2) return;
 
   // Gradient fill
-  const grad = sparkCtx.createLinearGradient(0, 0, 0, h);
+  const grad = sparkCtx ? sparkCtx.createLinearGradient(0, 0, 0, h) : null;
   grad.addColorStop(0, "rgba(237, 237, 237, 0.1)");
   grad.addColorStop(1, "rgba(237, 237, 237, 0.0)");
 
   const step = w / (MAX_SPARKLINE - 1);
 
   // Fill area
-  sparkCtx.beginPath();
-  sparkCtx.moveTo(0, h);
+  if (sparkCtx) sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.moveTo(0, h);
   for (let i = 0; i < latencyHistory.length; i++) {
     const x = i * step;
     const y = h - (latencyHistory[i] / max) * (h - 8);
-    sparkCtx.lineTo(x, y);
+    if (sparkCtx) sparkCtx.lineTo(x, y);
   }
-  sparkCtx.lineTo((latencyHistory.length - 1) * step, h);
-  sparkCtx.closePath();
-  sparkCtx.fillStyle = grad;
-  sparkCtx.fill();
+  if (sparkCtx) sparkCtx.lineTo((latencyHistory.length - 1) * step, h);
+  if (sparkCtx) sparkCtx.closePath();
+  if (sparkCtx) sparkCtx.fillStyle = grad;
+  if (sparkCtx) sparkCtx.fill();
 
   // Line
-  sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.beginPath();
   for (let i = 0; i < latencyHistory.length; i++) {
     const x = i * step;
     const y = h - (latencyHistory[i] / max) * (h - 8);
-    i === 0 ? sparkCtx.moveTo(x, y) : sparkCtx.lineTo(x, y);
+    if(sparkCtx) { i === 0 ? sparkCtx.moveTo(x, y) : sparkCtx.lineTo(x, y); }
   }
-  sparkCtx.strokeStyle = "#ededed";
-  sparkCtx.lineWidth = 1.5;
-  sparkCtx.stroke();
+  if (sparkCtx) sparkCtx.strokeStyle = "#ededed";
+  if (sparkCtx) sparkCtx.lineWidth = 1.5;
+  if (sparkCtx) sparkCtx.stroke();
 
   // Current value dot
   const lastX = (latencyHistory.length - 1) * step;
   const lastY = h - (latencyHistory[latencyHistory.length - 1] / max) * (h - 8);
-  sparkCtx.beginPath();
-  sparkCtx.arc(lastX, lastY, 2.5, 0, 2 * Math.PI);
-  sparkCtx.fillStyle = "#ededed";
-  sparkCtx.fill();
+  if (sparkCtx) sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.arc(lastX, lastY, 2.5, 0, 2 * Math.PI);
+  if (sparkCtx) sparkCtx.fillStyle = "#ededed";
+  if (sparkCtx) sparkCtx.fill();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // STATUS & LOG
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function handleStatusUpdate(p) {
   setState(p.state);
-  if (p.stepCount != null) stepCountEl.textContent = p.stepCount;
+  if (p.stepCount != null) if (stepCountEl) stepCountEl.textContent = p.stepCount;
   if (p.maxSteps != null)  maxStepsEl.textContent  = p.maxSteps;
   if (p.avgLatency != null) {
     latencyDisplayEl.textContent = `${p.avgLatency}ms`;
@@ -396,7 +396,7 @@ function handleStatusUpdate(p) {
     if (p.metrics.currentFps != null)      fpsDisplayEl.textContent     = p.metrics.currentFps;
     if (p.metrics.totalFrames != null)     frameCountEl.textContent     = p.metrics.totalFrames;
     if (p.metrics.skippedFrames != null)   skippedCountEl.textContent   = p.metrics.skippedFrames;
-    if (p.metrics.currentQuality != null)  qualityDisplayEl.textContent = `${p.metrics.currentQuality}%`;
+    if (p.metrics.currentQuality != null)  if (qualityDisplayEl) qualityDisplayEl.textContent = `${p.metrics.currentQuality}%`;
   }
   if (p.connection) setConnectionBadge(p.connection);
   if (p.message) addLog(p.message, p.state === AgentState.ERROR ? "error" : "warning");
@@ -414,12 +414,22 @@ function handleActionLog(p) {
 }
 
 function addLog(text, type = "info") {
-  const placeholder = actionLogEl.querySelector(".log-info");
-  if (placeholder?.textContent.includes("Waiting")) placeholder.remove();
+  const placeholder = actionLogEl.querySelector(".opacity-40");
+  if (placeholder && placeholder.textContent.includes("Waiting")) placeholder.remove();
+
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  let typeHtml = "";
+  if (type === "info") typeHtml = `<span class="text-primary font-bold shrink-0 w-14">[INFO]</span>`;
+  else if (type === "act")  typeHtml = `<span class="text-primary-fixed-dim font-bold shrink-0 w-14">[ACT]</span>`;
+  else if (type === "error" || type === "err")  typeHtml = `<span class="text-error font-bold shrink-0 w-14">[ERR]</span>`;
+  else if (type === "warning" || type === "warn")  typeHtml = `<span class="text-secondary font-bold shrink-0 w-14">[WARN]</span>`;
+  else if (type === "success")  typeHtml = `<span class="text-tertiary font-bold shrink-0 w-14">[OK]</span>`;
+  else typeHtml = `<span class="text-primary font-bold shrink-0 w-14">[SYS]</span>`;
 
   const el = document.createElement("div");
-  el.className = `log-entry log-${type}`;
-  el.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+  el.className = "flex gap-4 items-start";
+  el.innerHTML = `<span class="text-outline/50 shrink-0 tabular-nums">${time}</span>${typeHtml}<span class="text-on-surface">${text}</span>`;
+  
   actionLogEl.appendChild(el);
   actionLogEl.scrollTop = actionLogEl.scrollHeight;
   while (actionLogEl.childElementCount > 150) actionLogEl.removeChild(actionLogEl.firstChild);
@@ -450,7 +460,7 @@ function setState(state) {
 
 function setConnectionBadge(quality) {
   connBadge.textContent = quality;
-  connBadge.className = "conn-badge";
+  if (connBadge) connBadge.className = "conn-badge";
   const q = quality.toLowerCase();
   if (["excellent","good","fair","poor"].includes(q)) connBadge.classList.add(q);
 }
@@ -460,12 +470,12 @@ function resetToIdle() {
   if (hitlOverlay) hitlOverlay.hidden = true;
   if (approvalOverlay) approvalOverlay.hidden = true;
 }
-function showError(t) { errorMsg.textContent = t; errorMsg.hidden = false; }
-function hideError()   { errorMsg.hidden = true; }
+function showError(t) { if (errorMsg) errorMsg.textContent = t; if (errorMsg) errorMsg.hidden = false; }
+function hideError()   { if (errorMsg) errorMsg.hidden = true; }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SETTINGS
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function loadSettingsUI() {
   const s = await msg({ type: POPUP_GET_SETTINGS });
@@ -506,7 +516,7 @@ saveSettingsBtn.addEventListener("click", async () => {
   settCaptureQuality.value = settings.captureQuality;
   settServerTimeout.value  = settings.serverTimeoutMs;
   settStabilizeDelay.value = settings.stabilizeDelayMs;
-  settingsMsg.textContent = "✅ Settings saved.";
+  settingsMsg.textContent = "âœ… Settings saved.";
   settingsMsg.hidden = false;
   setTimeout(() => { settingsMsg.hidden = true; }, 2000);
 });
@@ -514,14 +524,14 @@ saveSettingsBtn.addEventListener("click", async () => {
 resetSettingsBtn.addEventListener("click", async () => {
   await msg({ type: POPUP_UPDATE_SETTINGS, settings: { ...DEFAULT_SETTINGS } });
   await loadSettingsUI();
-  settingsMsg.textContent = "↩️ Settings reset to defaults.";
+  settingsMsg.textContent = "â†©ï¸ Settings reset to defaults.";
   settingsMsg.hidden = false;
   setTimeout(() => { settingsMsg.hidden = true; }, 2000);
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HISTORY
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function loadHistoryUI() {
   const history = await msg({ type: POPUP_GET_HISTORY });
@@ -529,16 +539,13 @@ async function loadHistoryUI() {
 
   if (!history || history.length === 0) {
     historyList.innerHTML = `
-      <div class="history-empty">
-        <span class="material-symbols-outlined">inbox</span>
-        No past sessions yet. Start your first agent task.
-      </div>`;
+      <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
     return;
   }
 
   for (const entry of history) {
     const card = document.createElement("div");
-    card.className = "history-card";
+    card.className = "neu-extruded bg-surface rounded-2xl p-4 flex flex-col gap-3 transition-transform hover:scale-[1.01]";
 
     const dur = entry.durationMs
       ? formatDuration(entry.durationMs)
@@ -552,12 +559,12 @@ async function loadHistoryUI() {
     });
 
     card.innerHTML = `
-      <div class="hc-goal">${escapeHtml(entry.goal || "Untitled Task")}</div>
-      <div class="hc-meta">
-        <span class="hc-result ${result}">${result}</span>
-        <span><span class="material-symbols-outlined">footprint</span> ${entry.steps || 0} steps</span>
-        <span><span class="material-symbols-outlined">timer</span> ${dur}</span>
-        <span><span class="material-symbols-outlined">schedule</span> ${dateStr}</span>
+      <div class="font-headline-md text-[14px] text-on-surface font-bold whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(entry.goal || "Untitled Task")}</div>
+      <div class="flex items-center gap-3 flex-wrap font-mono text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">
+        <span class="px-2 py-1 rounded neu-recessed ${result === 'ERROR' ? 'text-error' : 'text-primary'}">${result}</span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">footprint</span> ${entry.steps || 0} steps</span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">timer</span> ${dur}</span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> ${dateStr}</span>
       </div>
     `;
     historyList.appendChild(card);
@@ -576,15 +583,12 @@ function formatDuration(ms) {
 clearHistoryBtn.addEventListener("click", async () => {
   await msg({ type: POPUP_CLEAR_HISTORY });
   historyList.innerHTML = `
-    <div class="history-empty">
-      <span class="material-symbols-outlined">inbox</span>
-      History cleared.
-    </div>`;
+    <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HELPERS
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function msg(data) {
   return new Promise((r) => chrome.runtime.sendMessage(data, r));
@@ -596,13 +600,13 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // FULLSCREEN VIDEO MODAL
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const videoModal    = $("videoModal");
 const modalCanvas   = $("modalCanvas");
-const modalCtx      = modalCanvas.getContext("2d");
+const modalCtx = modalCanvas ? modalCanvas.getContext("2d") : null;
 const modalTitle    = $("modalTitle");
 const modalCloseBtn = $("modalClose");
 let activeModalStream = null;
@@ -615,14 +619,14 @@ document.querySelectorAll(".expand-btn").forEach((btn) => {
     activeModalStream = target;
 
     if (target === "raw") {
-      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport — Fullscreen';
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport â€” Fullscreen';
       modalTitle.className = "panel-title";
     } else {
-      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream — Fullscreen';
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream â€” Fullscreen';
       modalTitle.className = "panel-title text-green";
     }
 
-    videoModal.hidden = false;
+    if (videoModal) videoModal.hidden = false;
     mirrorToModal();
   });
 });
@@ -633,7 +637,7 @@ function mirrorToModal() {
     return;
   }
 
-  const src = activeModalStream === "raw" ? rawCanvas : redactedCanvas;
+  const src = activeModalStream === "raw" ? document.getElementById("liveStream") : document.getElementById("annotatedStream");
 
   // Match modal canvas resolution to source
   if (modalCanvas.width !== src.width || modalCanvas.height !== src.height) {
@@ -646,7 +650,7 @@ function mirrorToModal() {
 }
 
 function closeModal() {
-  videoModal.hidden = true;
+  if (videoModal) videoModal.hidden = true;
   activeModalStream = null;
   if (modalAnimFrame) {
     cancelAnimationFrame(modalAnimFrame);
@@ -654,14 +658,14 @@ function closeModal() {
   }
 }
 
-modalCloseBtn.addEventListener("click", closeModal);
+if(modalCloseBtn) modalCloseBtn.addEventListener("click", closeModal);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !videoModal.hidden) closeModal();
+  if (e.key === "Escape" && (videoModal && !videoModal.hidden)) closeModal();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // INIT: Sync state on popup open
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 (async () => {
   const status = await msg({ type: POPUP_GET_STATUS });
@@ -674,9 +678,9 @@ document.addEventListener("keydown", (e) => {
   }
 })();
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // VAULT MANAGEMENT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const VAULT_FIELDS = [
   { key: 'full_name', label: 'Full Name',  placeholder: 'John Doe', type: 'text' },
@@ -692,8 +696,45 @@ const VAULT_FIELDS = [
 
 async function loadVaultUI() {
   const data = await msg({ type: POPUP_VAULT_GET });
+  const vaultForm = document.getElementById("vaultForm");
+  if (vaultForm) {
+    vaultForm.innerHTML = "";
+    for (const field of VAULT_FIELDS) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex flex-col gap-xs w-full mb-3";
+      
+      const label = document.createElement("label");
+      label.className = "font-label-md text-label-md text-on-surface-variant ml-2";
+      label.textContent = field.label;
+      
+      const inner = document.createElement("div");
+      inner.className = "relative flex items-center w-full";
+      
+      let input;
+      if (field.type === "select") {
+        input = document.createElement("select");
+        const opt1 = document.createElement("option"); opt1.value = ""; opt1.textContent = field.placeholder;
+        const opt2 = document.createElement("option"); opt2.value = "Male"; opt2.textContent = "Male";
+        const opt3 = document.createElement("option"); opt3.value = "Female"; opt3.textContent = "Female";
+        const opt4 = document.createElement("option"); opt4.value = "Other"; opt4.textContent = "Other";
+        input.appendChild(opt1); input.appendChild(opt2); input.appendChild(opt3); input.appendChild(opt4);
+      } else {
+        input = document.createElement("input");
+        input.type = field.type;
+        input.placeholder = field.placeholder;
+      }
+      
+      input.id = `vault_${field.key}`;
+      input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none";
+      
+      inner.appendChild(input);
+      wrapper.appendChild(label);
+      wrapper.appendChild(inner);
+      vaultForm.appendChild(wrapper);
+    }
+  }
   populateVaultUI(data || {});
-}
+
 
 function populateVaultUI(vaultData) {
   for (const field of VAULT_FIELDS) {
@@ -762,7 +803,7 @@ function showVaultMsg(text, type = 'info') {
 // Wire vault buttons
 document.addEventListener('DOMContentLoaded', () => {
   const saveVaultBtn = document.getElementById('saveVaultBtn');
-  const flushVaultBtn = document.getElementById('flushVaultBtn');
+  const flushVaultBtn = document.getElementById('clearVaultBtn');
   if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
   if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
   
@@ -773,9 +814,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HITL (HUMAN-IN-THE-LOOP) CHAT
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function showHitlPrompt(payload) {
   pendingHitlCorrelationId = payload.correlationId;
@@ -824,9 +865,9 @@ if (hitlInput) hitlInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendHitlResponse();
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // JIT ACTION APPROVAL
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function showApprovalPrompt(payload) {
   pendingApprovalCorrelationId = payload.correlationId;
@@ -854,3 +895,17 @@ async function sendApprovalResponse(approved) {
 
 if (approvalApproveBtn) approvalApproveBtn.addEventListener('click', () => sendApprovalResponse(true));
 if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprovalResponse(false));
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
