@@ -44,7 +44,7 @@ const startBtn        = $("startBtn");
 const stopBtn         = $("stopBtn");
 const goalInput       = $("goalInput");
 const statusDot       = $("statusDot");
-const stateLabel      = $("stateLabel");
+const stateLabel      = $("headerState");
 const connBadge       = $("connectionBadge");
 const errorMsg        = $("errorMsg");
 
@@ -437,29 +437,27 @@ function addLog(text, type = "info") {
 
 function setState(state) {
   currentState = state;
-  stateLabel.textContent = state;
-  stateLabel.className = "state-label";
-  statusDot.className  = "status-dot dot-core";
+  if (stateLabel) stateLabel.textContent = state;
+  if (!statusDot) return;
 
+  statusDot.className = "w-2 h-2 rounded-full";
+  
   const map = {
-    [AgentState.RUNNING]:  ["running", "active"],
-    [AgentState.PAUSED]:   ["paused",  "paused"],
-    [AgentState.ERROR]:    ["error",   "error"],
-    [AgentState.FINISHED]: ["finished", ""],
-    [AgentState.WAITING_FOR_USER]: ["paused", "paused"],
-    [AgentState.WAITING_FOR_APPROVAL]: ["paused", "paused"],
+    [AgentState.RUNNING]:  "bg-tertiary animate-pulse",
+    [AgentState.PAUSED]:   "bg-secondary",
+    [AgentState.ERROR]:    "bg-error animate-bounce",
+    [AgentState.FINISHED]: "bg-primary",
+    [AgentState.WAITING_FOR_USER]: "bg-secondary animate-pulse",
+    [AgentState.WAITING_FOR_APPROVAL]: "bg-error animate-pulse",
   };
-  const [lbl, dot] = map[state] || ["", ""];
-  if (lbl) stateLabel.classList.add(lbl);
-  if (dot) {
-    // Remove any other state classes (active, paused, error, finished) except dot-core
-    statusDot.classList.remove("active", "paused", "error", "finished");
-    statusDot.classList.add(dot);
-  }
+  
+  const dotClasses = map[state] || "bg-outline";
+  statusDot.className = `w-2 h-2 rounded-full ${dotClasses}`;
+}
 }
 
 function setConnectionBadge(quality) {
-  connBadge.textContent = quality;
+  if (!connBadge) return; connBadge.textContent = quality;
   if (connBadge) connBadge.className = "conn-badge";
   const q = quality.toLowerCase();
   if (["excellent","good","fair","poor"].includes(q)) connBadge.classList.add(q);
@@ -795,9 +793,20 @@ async function flushVault() {
 function showVaultMsg(text, type = 'info') {
   if (!vaultMsg) return;
   vaultMsg.textContent = text;
-  vaultMsg.hidden = false;
-  vaultMsg.style.color = type === 'success' ? '#22c55e' : type === 'warning' ? '#f59e0b' : '#94a3b8';
-  setTimeout(() => { vaultMsg.hidden = true; }, 3000);
+  
+  // Tailwind color classes based on type
+  vaultMsg.classList.remove("text-primary", "text-error", "text-warning", "text-tertiary", "text-secondary");
+  if (type === 'success') vaultMsg.classList.add("text-tertiary");
+  else if (type === 'warning') vaultMsg.classList.add("text-error");
+  else vaultMsg.classList.add("text-primary");
+
+  vaultMsg.classList.remove("opacity-0");
+  vaultMsg.classList.add("opacity-100");
+  setTimeout(() => { 
+    vaultMsg.classList.remove("opacity-100");
+    vaultMsg.classList.add("opacity-0"); 
+  }, 3000);
+}, 3000);
 }
 
 // Wire vault buttons
@@ -909,5 +918,9 @@ if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprova
 
 
 }
+
+
+
+
 
 
