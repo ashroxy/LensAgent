@@ -448,6 +448,8 @@ function setConnectionBadge(quality) {
 
 function resetToIdle() {
   startBtn.disabled = false; stopBtn.disabled = true; goalInput.disabled = false;
+  if (hitlOverlay) hitlOverlay.hidden = true;
+  if (approvalOverlay) approvalOverlay.hidden = true;
 }
 function showError(t) { errorMsg.textContent = t; errorMsg.hidden = false; }
 function hideError()   { errorMsg.hidden = true; }
@@ -769,13 +771,15 @@ async function sendHitlResponse() {
   
   const saveToVault = hitlSaveToVault.checked && pendingHitlVaultKey;
   
-  await msg({
-    type: POPUP_HITL_RESPONSE,
-    correlationId: pendingHitlCorrelationId,
-    answer,
-    saveToVault,
-    vaultKey: pendingHitlVaultKey,
-  });
+  if (pendingHitlCorrelationId !== null) {
+    await msg({
+      type: POPUP_HITL_RESPONSE,
+      correlationId: pendingHitlCorrelationId,
+      answer,
+      saveToVault,
+      vaultKey: pendingHitlVaultKey,
+    });
+  }
   
   hitlOverlay.hidden = true;
   pendingHitlCorrelationId = null;
@@ -803,11 +807,13 @@ function showApprovalPrompt(payload) {
 }
 
 async function sendApprovalResponse(approved) {
-  await msg({
-    type: POPUP_APPROVAL_RESPONSE,
-    correlationId: pendingApprovalCorrelationId,
-    approved,
-  });
+  if (pendingApprovalCorrelationId !== null) {
+    await msg({
+      type: POPUP_APPROVAL_RESPONSE,
+      correlationId: pendingApprovalCorrelationId,
+      approved,
+    });
+  }
   
   approvalOverlay.hidden = true;
   pendingApprovalCorrelationId = null;
