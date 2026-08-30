@@ -431,7 +431,10 @@ function addLog(text, type = "info") {
   el.innerHTML = `<span class="text-outline/50 shrink-0 tabular-nums">${time}</span>${typeHtml}<span class="text-on-surface">${text}</span>`;
   
   actionLogEl.appendChild(el);
-  actionLogEl.scrollTop = actionLogEl.scrollHeight;
+    while (actionLogEl.childElementCount > 50) {
+      actionLogEl.removeChild(actionLogEl.firstElementChild);
+    }
+    actionLogEl.scrollTop = actionLogEl.scrollHeight;
   while (actionLogEl.childElementCount > 150) actionLogEl.removeChild(actionLogEl.firstChild);
 }
 
@@ -514,7 +517,7 @@ saveSettingsBtn.addEventListener("click", async () => {
   if (settCaptureQuality) settCaptureQuality.value = settings.captureQuality;
   settServerTimeout.value  = settings.serverTimeoutMs;
   if (settStabilizeDelay) settStabilizeDelay.value = settings.stabilizeDelayMs;
-  if (settingsMsg) settingsMsg.textContent = "✅ Settings saved.";
+  if (settingsMsg) settingsMsg.textContent = "\u2705 Settings saved.";
   if (settingsMsg) settingsMsg.hidden = false;
   setTimeout(() => { if (settingsMsg) settingsMsg.hidden = true; }, 2000);
 });
@@ -711,20 +714,30 @@ async function loadVaultUI() {
       let input;
       if (field.type === "select") {
         input = document.createElement("select");
+        input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none appearance-none bg-transparent cursor-pointer";
         const opt1 = document.createElement("option"); opt1.value = ""; opt1.textContent = field.placeholder;
         const opt2 = document.createElement("option"); opt2.value = "Male"; opt2.textContent = "Male";
         const opt3 = document.createElement("option"); opt3.value = "Female"; opt3.textContent = "Female";
         const opt4 = document.createElement("option"); opt4.value = "Other"; opt4.textContent = "Other";
         input.appendChild(opt1); input.appendChild(opt2); input.appendChild(opt3); input.appendChild(opt4);
+        input.id = `vault_${field.key}`;
+        // icon logic appended below
       } else {
         input = document.createElement("input");
         input.type = field.type;
         input.placeholder = field.placeholder;
+        input.id = `vault_${field.key}`;
+        input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none";
+      }
+    inner.appendChild(input);
+      if (field.type === "select") {
+        const icon = document.createElement("span");
+        icon.className = "material-symbols-outlined absolute right-3 pointer-events-none text-on-surface-variant";
+        icon.textContent = "expand_more";
+        inner.appendChild(icon);
       }
       
-      input.id = `vault_${field.key}`;
-      input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none";
-    if (field.key === 'pincode' || field.type === 'tel') {
+      if (field.key === 'pincode' || field.type === 'tel') {
       input.addEventListener('input', function() {
         this.value = this.value.replace(/[^0-9+\-\s]/g, '');
       });
@@ -940,3 +953,56 @@ loadVaultUI();
 
 
 
+
+
+
+
+
+
+
+// FULLSCREEN MODALS
+const btnRawFullscreen = document.getElementById("btnRawFullscreen");
+const btnSanitizedFullscreen = document.getElementById("btnSanitizedFullscreen");
+const fullscreenModal = document.getElementById("fullscreenModal");
+const btnCloseModal = document.getElementById("btnCloseModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalFeed = document.getElementById("modalFeed");
+
+let activeFullscreenInterval = null;
+
+if (btnRawFullscreen) {
+  btnRawFullscreen.addEventListener("click", () => {
+    modalTitle.innerHTML = "<span class=\"material-symbols-outlined text-primary\">visibility</span> Raw Viewport - Fullscreen";
+    fullscreenModal.classList.remove("opacity-0", "pointer-events-none");
+    fullscreenModal.classList.add("opacity-100");
+    if (activeFullscreenInterval) clearInterval(activeFullscreenInterval);
+    activeFullscreenInterval = setInterval(() => {
+      const rawFeed = document.getElementById("rawFeed");
+      if (rawFeed && rawFeed.src) modalFeed.src = rawFeed.src;
+    }, 100);
+  });
+}
+
+if (btnSanitizedFullscreen) {
+  btnSanitizedFullscreen.addEventListener("click", () => {
+    modalTitle.innerHTML = "<span class=\"material-symbols-outlined text-primary\">security</span> Sanitized Stream - Fullscreen";
+    fullscreenModal.classList.remove("opacity-0", "pointer-events-none");
+    fullscreenModal.classList.add("opacity-100");
+    if (activeFullscreenInterval) clearInterval(activeFullscreenInterval);
+    activeFullscreenInterval = setInterval(() => {
+      const redactedFeed = document.getElementById("redactedFeed");
+      if (redactedFeed && redactedFeed.src) modalFeed.src = redactedFeed.src;
+    }, 100);
+  });
+}
+
+if (btnCloseModal) {
+  btnCloseModal.addEventListener("click", () => {
+    fullscreenModal.classList.remove("opacity-100");
+    fullscreenModal.classList.add("opacity-0", "pointer-events-none");
+    if (activeFullscreenInterval) {
+      clearInterval(activeFullscreenInterval);
+      activeFullscreenInterval = null;
+    }
+  });
+}
