@@ -83,15 +83,13 @@
                 <!-- Video Feeds -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
-                        <span class="font-label-md text-[10px] text-on-surface-variant mb-3 uppercase tracking-wider">Raw Viewport</span>
+                        <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button></div>
                         <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000]">
                             <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain opacity-70 grayscale mix-blend-luminosity"></canvas>
                         </div>
                     </div>
                     <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Sanitized Stream</span>
-                            <div class="flex items-center gap-2 px-2 py-1 rounded bg-tertiary/10">
+                        <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Sanitized Stream</span><div class="flex items-center gap-2"><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-tertiary" data-target="redacted"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button><div class="flex items-center gap-2 px-2 py-1 rounded bg-tertiary/10">
                                 <div class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></div>
                                 <span class="font-mono text-[9px] text-tertiary uppercase tracking-widest">Live</span>
                             </div>
@@ -104,26 +102,35 @@
 
                 <!-- Metrics -->
                 <div class="neu-flat rounded-2xl p-4">
-                    <div class="grid grid-cols-4 gap-3">
-                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Redactions</span>
-                            <span id="redactionCount" class="font-mono text-[16px] font-bold text-primary">0</span>
+                    <div class="grid grid-cols-6 gap-2">
+                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Steps</span>
+                            <span class="font-mono text-[12px] font-bold text-primary"><span id="stepCount">0</span>/<span id="maxSteps">?</span></span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Latency</span>
-                            <span class="font-mono text-[16px] font-bold text-primary"><span id="latencyMs">0</span>ms</span>
+                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1 relative overflow-hidden">
+                            <canvas id="sparklineCanvas" width="100" height="50" class="absolute bottom-0 left-0 w-full h-[50px] opacity-20 pointer-events-none"></canvas>
+                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider z-10">Latency</span>
+                            <span class="font-mono text-[12px] font-bold text-primary z-10"><span id="latencyMs">0</span>ms</span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">FPS</span>
-                            <span id="fpsCount" class="font-mono text-[16px] font-bold text-primary">-</span>
+                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Redacted</span>
+                            <span id="redactionCount" class="font-mono text-[12px] font-bold text-tertiary">0</span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Dropped</span>
-                            <span id="skippedCount" class="font-mono text-[16px] font-bold text-error">0</span>
+                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">FPS</span>
+                            <span id="fpsCount" class="font-mono text-[12px] font-bold text-primary">-</span>
+                        </div>
+                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Dropped</span>
+                            <span id="skippedCount" class="font-mono text-[12px] font-bold text-error">0</span>
+                        </div>
+                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Quality</span>
+                            <span class="font-mono text-[11px] font-bold text-on-surface-variant"><span id="qualityDisplay">100%</span> <span id="dprDisplay"></span></span>
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Terminal -->
                 <div class="neu-flat rounded-2xl p-4 flex flex-col h-[180px] shrink-0">
                     <div class="flex justify-between items-center mb-3">
@@ -140,7 +147,7 @@
             </section>
 
             <!-- SETTINGS TAB -->
-            <section id="tab-settings" class="tab-content flex-col gap-6">
+            <section id="tab-settings" class="tab-content flex-col gap-6 overflow-y-auto pr-2">
                 <div class="neu-extruded rounded-2xl p-6">
                     <h3 class="font-headline-md text-[14px] text-on-surface mb-4 border-b border-outline-variant/30 pb-3">Connection</h3>
                     <div class="grid grid-cols-2 gap-4">
@@ -192,6 +199,7 @@
                     </div>
                 </div>
 
+                <span id="settingsMsg" class="text-[11px] text-tertiary font-bold self-end" hidden></span>
                 <div class="flex justify-end gap-4 mt-2">
                     <button id="resetSettingsBtn" class="px-6 py-2 rounded-xl neu-btn text-on-surface font-label-md text-[12px] uppercase">Reset</button>
                     <button id="saveSettingsBtn" class="px-6 py-2 rounded-xl neu-btn-primary text-primary font-label-md text-[12px] uppercase">Save Changes</button>
@@ -199,7 +207,7 @@
             </section>
 
             <!-- HISTORY TAB -->
-            <section id="tab-history" class="tab-content flex-col h-full">
+            <section id="tab-history" class="tab-content flex-col h-full overflow-y-auto pr-2">
                 <div class="flex justify-between items-center mb-4 shrink-0">
                     <p class="font-body-md text-on-surface-variant text-[13px]">Review past sessions.</p>
                     <button id="clearHistoryBtn" class="px-4 py-2 rounded-lg neu-btn text-error font-label-md text-[11px] uppercase flex items-center gap-2">
@@ -217,12 +225,12 @@
             </section>
 
             <!-- VAULT TAB -->
-            <section id="tab-vault" class="tab-content flex-col gap-6">
+            <section id="tab-vault" class="tab-content flex-col gap-6 overflow-y-auto pr-2">
                 <div class="neu-extruded rounded-2xl p-6 flex flex-col">
                     <div class="flex justify-between items-start border-b border-outline-variant/20 pb-4 mb-4">
                         <div>
                             <h2 class="font-headline-md text-[14px] text-on-surface flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-[20px]">encrypted</span> Identity Vault
+                                <span class="material-symbols-outlined text-primary text-[20px]">encrypted</span> Identity Vault <span id="vaultFilledCount" class="text-[12px] bg-primary text-on-primary px-2 py-0.5 rounded-full">0</span>
                             </h2>
                             <p class="text-[11px] text-on-surface-variant mt-1">Secure local storage for PII form injection.</p>
                         </div>
@@ -270,6 +278,19 @@
                 <button id="approvalDenyBtn" class="flex-1 py-2 neu-btn text-on-surface font-bold text-[12px] uppercase rounded-lg">Reject</button>
                 <button id="approvalApproveBtn" class="flex-1 py-2 neu-btn-primary text-primary font-bold text-[12px] uppercase rounded-lg">Approve</button>
             </div>
+        </div>
+    </div>
+
+    
+    <div id="videoModal" hidden class="fixed inset-0 bg-surface/90 backdrop-blur-md z-[200] flex flex-col p-6 transition-all">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modalTitle" class="text-[18px] font-bold text-on-surface flex items-center gap-2"></h2>
+            <button id="modalClose" class="w-10 h-10 rounded-full neu-btn text-on-surface flex items-center justify-center">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="flex-1 neu-recessed rounded-2xl relative overflow-hidden bg-[#000] p-2">
+            <canvas id="modalCanvas" class="w-full h-full object-contain"></canvas>
         </div>
     </div>
 
