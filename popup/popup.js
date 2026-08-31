@@ -620,11 +620,9 @@ document.querySelectorAll(".expand-btn").forEach((btn) => {
     activeModalStream = target;
 
     if (target === "raw") {
-      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport - Fullscreen';
-      modalTitle.className = "panel-title";
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-[18px] text-primary">visibility</span> Raw Viewport - Fullscreen';
     } else {
-      modalTitle.innerHTML = '<span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream - Fullscreen';
-      modalTitle.className = "panel-title text-green";
+      modalTitle.innerHTML = '<span class="material-symbols-outlined text-[18px] text-tertiary">shield_locked</span> Sanitized Stream - Fullscreen';
     }
 
     if (videoModal) videoModal.hidden = false;
