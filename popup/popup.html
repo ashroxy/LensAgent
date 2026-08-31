@@ -60,7 +60,7 @@
         <main class="flex-1 overflow-y-auto relative p-6 pb-10">
             
             <!-- AGENT TAB -->
-            <section id="tab-agent" class="tab-content active flex-col gap-6">
+            <section id="tab-agent" class="tab-content active flex-col gap-6 overflow-y-auto pr-2">
                 <!-- Top Row -->
                 <div class="flex gap-4 items-end">
                     <div class="flex-1">
@@ -100,37 +100,36 @@
                     </div>
                 </div>
 
-                <!-- Metrics -->
+                                <!-- Metrics -->
                 <div class="neu-flat rounded-2xl p-4">
-                    <div class="grid grid-cols-6 gap-2">
-                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Steps</span>
-                            <span class="font-mono text-[12px] font-bold text-primary"><span id="stepCount">0</span>/<span id="maxSteps">?</span></span>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Steps</span>
+                            <span class="font-mono text-[14px] font-bold text-primary"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1 relative overflow-hidden">
-                            <canvas id="sparklineCanvas" width="100" height="50" class="absolute bottom-0 left-0 w-full h-[50px] opacity-20 pointer-events-none"></canvas>
-                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider z-10">Latency</span>
-                            <span class="font-mono text-[12px] font-bold text-primary z-10"><span id="latencyMs">0</span>ms</span>
+                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1 relative overflow-hidden">
+                            <canvas id="sparklineCanvas" width="150" height="50" class="absolute bottom-0 left-0 w-full h-[50px] opacity-20 pointer-events-none"></canvas>
+                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider z-10">Latency</span>
+                            <span class="font-mono text-[14px] font-bold text-primary z-10"><span id="latencyMs">0</span>ms</span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Redacted</span>
-                            <span id="redactionCount" class="font-mono text-[12px] font-bold text-tertiary">0</span>
+                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Redactions</span>
+                            <span id="redactionCount" class="font-mono text-[14px] font-bold text-tertiary">0</span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">FPS</span>
-                            <span id="fpsCount" class="font-mono text-[12px] font-bold text-primary">-</span>
+                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">FPS</span>
+                            <span id="fpsCount" class="font-mono text-[14px] font-bold text-primary">-</span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Dropped</span>
-                            <span id="skippedCount" class="font-mono text-[12px] font-bold text-error">0</span>
+                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Dropped</span>
+                            <span id="skippedCount" class="font-mono text-[14px] font-bold text-error">0</span>
                         </div>
-                        <div class="neu-recessed rounded-xl p-2 flex flex-col justify-center items-center gap-1">
-                            <span class="font-label-md text-[8px] text-outline uppercase tracking-wider">Quality</span>
-                            <span class="font-mono text-[11px] font-bold text-on-surface-variant"><span id="qualityDisplay">100%</span> <span id="dprDisplay"></span></span>
+                        <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Quality</span>
+                            <span class="font-mono text-[12px] font-bold text-on-surface-variant"><span id="qualityDisplay">100%</span> <span id="dprDisplay"></span></span>
                         </div>
                     </div>
                 </div>
-                
                 <!-- Terminal -->
                 <div class="neu-flat rounded-2xl p-4 flex flex-col h-[180px] shrink-0">
                     <div class="flex justify-between items-center mb-3">
