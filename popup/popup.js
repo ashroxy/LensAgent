@@ -727,21 +727,28 @@ async function loadVaultUI() {
         input.id = `vault_${field.key}`;
         input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none";
       }
-    inner.appendChild(input);
+      if (field.type === "select") {
+        input.style.appearance = "none";
+        input.style.webkitAppearance = "none";
+        input.style.mozAppearance = "none";
+      }
+
+      inner.appendChild(input);
+
       if (field.type === "select") {
         const icon = document.createElement("span");
-        icon.className = "material-symbols-outlined absolute right-3 pointer-events-none text-on-surface-variant";
+        icon.className = "material-symbols-outlined text-on-surface-variant";
+        icon.style.cssText = "position: absolute; right: 12px; pointer-events: none;";
         icon.textContent = "expand_more";
         inner.appendChild(icon);
       }
       
       if (field.key === 'pincode' || field.type === 'tel') {
-      input.addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9+\-\s]/g, '');
-      });
-    }
+        input.addEventListener('input', function() {
+          this.value = this.value.replace(/[^0-9+\-\s]/g, '');
+        });
+      }
       
-      inner.appendChild(input);
       wrapper.appendChild(label);
       wrapper.appendChild(inner);
       vaultForm.appendChild(wrapper);
