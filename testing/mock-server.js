@@ -20,9 +20,10 @@ const server = http.createServer((req, res) => {
       
       console.log(`- Goal: "${payload.goal}"`);
       console.log(`- Step: ${payload.step}`);
+      console.log(`- Sanitized DOM elements: ${payload.sanitized_dom?.elements?.length || 0}`);
+      console.log(`- Sanitized AX Tree nodes: ${payload.sanitized_accessibility_tree?.nodes?.length || 0}`);
+      console.log(`- Browser State Redactions: ${payload.browser_state?.redactions?.length || 0}`);
       console.log(`- UI Elements detected: ${payload.ui_elements?.length || 0}`);
-      console.log(`- A11y Tree nodes: ${payload.a11y_tree?.length || 0}`);
-      console.log(`- DOM Snapshot nodes: ${payload.dom_snapshot?.length || 0}`);
       console.log(`- Redacted Image Size: ${payload.redacted_image ? Math.round(payload.redacted_image.length / 1024) + ' KB' : 'Missing'}`);
 
       const dpr = payload.viewport?.dpr || 1;

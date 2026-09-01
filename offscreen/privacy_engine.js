@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ISRO PS 171 - On-Device Privacy & PII Redaction Engine
  * Module: privacy_engine.js
  * ============================================================================
@@ -89,27 +89,43 @@ export class PrivacyEngine {
     // Phase 1: Scan DOM for PII bounding boxes
     const domBoxes = this.scanDOM();
 
-    // Phase 2: Merge with ML-detected candidate elements
-    const allBoxes = [...domBoxes, ...candidateElements.map(el => ({
-      id: el.label || el.id || 'ML_ELEMENT',
-      category: el.type?.toUpperCase() || 'ELEMENT',
-      boundingBox: {
-        x: el.bbox ? el.bbox[0] : (el.x || 0),
-        y: el.bbox ? el.bbox[1] : (el.y || 0),
-        width:  el.bbox ? el.bbox[2] : (el.width  || 0),
-        height: el.bbox ? el.bbox[3] : (el.height || 0),
-      },
-      redactionLabel: null, // will be assigned during canvas pass
-      needsTextScan: true
-    }))];
+    const KNOWN_PII_CATEGORIES = new Set([
+      'AADHAAR', 'PAN', 'CREDITCARD', 'CREDIT_CARD', 'INDIANPHONE', 'PHONE',
+      'EMAIL', 'UPIID', 'UPI', 'PASSWORD', 'PASSWORD_SECRET', 'AUTH_CREDENTIAL',
+      'OTP_PIN', 'PERSON', 'ADDRESS', 'FACE_AVATAR', 'PASSPORT', 'DRIVINGLICENSE'
+    ]);
+
+    // Phase 2: Merge with ML-detected and DOM-scanned candidate elements
+    const allBoxes = [...domBoxes, ...candidateElements.map(el => {
+      let b = el.boundingBox;
+      if (!b) {
+        b = {
+          x: el.bbox ? el.bbox[0] : (el.x || 0),
+          y: el.bbox ? el.bbox[1] : (el.y || 0),
+          width:  el.bbox ? el.bbox[2] : (el.width  || 0),
+          height: el.bbox ? el.bbox[3] : (el.height || 0),
+        };
+      }
+      const cat = (el.category || el.type || 'ELEMENT').toUpperCase();
+      const isPreIdentifiedPii = !!el.redactionLabel || KNOWN_PII_CATEGORIES.has(cat);
+      return {
+        id: el.id || el.label || 'ELEMENT',
+        category: cat,
+        boundingBox: b,
+        redactionLabel: el.redactionLabel || (isPreIdentifiedPii ? this.vault.tokenize(cat, cat) : null),
+        needsTextScan: !isPreIdentifiedPii
+      };
+    })];
 
     // Phase 3: Canvas redaction pass
     for (const item of allBoxes) {
       const box = item.boundingBox;
-      const x = Math.max(0, Math.round(box.x * scale));
-      const y = Math.max(0, Math.round(box.y * scale));
-      const width  = Math.min(canvas.width  - x, Math.round(box.width  * scale));
-      const height = Math.min(canvas.height - y, Math.round(box.height * scale));
+      const sx = box.viewportWidth ? (canvas.width / box.viewportWidth) : 1.0;
+      const sy = box.viewportHeight ? (canvas.height / box.viewportHeight) : 1.0;
+      const x = Math.max(0, Math.round(box.x * sx));
+      const y = Math.max(0, Math.round(box.y * sy));
+      const width  = Math.min(canvas.width  - x, Math.round(box.width  * sx));
+      const height = Math.min(canvas.height - y, Math.round(box.height * sy));
       if (width <= 0 || height <= 0) continue;
 
       // Determine if this item needs PII text scan (for ML elements)
@@ -225,6 +241,106 @@ export class PrivacyEngine {
   /** Flush session vault at the end of an agent session. */
   flushVault() { return this.vault.flushVault(); }
 
+  /**
+   * Directly detects PII via Regex + NER patterns and draws solid black
+   * redaction rectangles on the Canvas 2D context.
+   * 
+   * @param {CanvasRenderingContext2D} context - Canvas 2D context
+   * @param {number} width - Canvas width in physical pixels
+   * @param {number} height - Canvas height in physical pixels
+   * @param {Array} [candidateElements=[]] - Detected UI elements from structural pass
+   * @returns {Array<{ type: string, bbox: [number, number, number, number], alias?: string }>} Redacted regions
+   */
+  detectAndRedactPII(context, width, height, candidateElements = []) {
+    const redactedRegions = [];
+
+    const nerPatterns = {
+      PERSON_NER: /\b(?:Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.|Shri|Smt\.|Director|Commander|Scientist|Capt\.)(?:\s+(?:Dr\.|Prof\.|Shri|Smt\.))?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g,
+      CONFIDENTIAL_NER: /\b(?:ISRO|DRDO|RAW|NTRO|BARC|MoD)\s+(?:TOP\s+SECRET|CONFIDENTIAL|RESTRICTED|CLASSIFIED)\b/gi
+    };
+
+    const allPatterns = { ...this.patterns, ...nerPatterns };
+
+    const applyRedaction = (type, bbox, rawSecret = '') => {
+      let [x, y, w, h] = bbox;
+      x = Math.max(0, Math.round(x));
+      y = Math.max(0, Math.round(y));
+      w = Math.min(width - x, Math.round(w));
+      h = Math.min(height - y, Math.round(h));
+
+      if (w <= 0 || h <= 0) return;
+
+      const categoryKey = type.toUpperCase().replace(/_NUMBER|_SECRET|_ADDRESS|_NER/g, '');
+      const alias = this.vault ? this.vault.tokenize(rawSecret || type, categoryKey) : `[SYS_${categoryKey}_01]`;
+
+      // SIDE EFFECT: Draw solid black rectangle over PII on canvas
+      context.fillStyle = "#000000";
+      context.fillRect(x, y, w, h);
+
+      // Security outline border
+      context.strokeStyle = "#FF0055";
+      context.lineWidth = 1.5;
+      context.strokeRect(x, y, w, h);
+
+      // Render monospace alias label
+      if (w >= 40 && h >= 14) {
+        context.fillStyle = "#00FFCC";
+        context.font = "bold 10px monospace";
+        context.textBaseline = "middle";
+        context.fillText(alias, x + 4, y + h / 2);
+      }
+
+      redactedRegions.push({
+        type: type,
+        bbox: [x, y, w, h],
+        alias: alias
+      });
+    };
+
+    if (Array.isArray(candidateElements) && candidateElements.length > 0) {
+      for (const el of candidateElements) {
+        const bbox = el.bbox || [el.x, el.y, el.width, el.height];
+        if (!bbox || bbox.length < 4) continue;
+
+        const textContext = `${el.label || ''} ${el.text || ''} ${el.value || ''} ${el.type || ''}`.trim();
+        if (!textContext) continue;
+
+        if (el.type === 'password' || /password|pin|cvv|secret/i.test(el.label || '')) {
+          applyRedaction("PASSWORD_SECRET", bbox, el.value || 'PASSWORD');
+          continue;
+        }
+
+        for (const [cat, regex] of Object.entries(allPatterns)) {
+          regex.lastIndex = 0;
+          let match;
+          while ((match = regex.exec(textContext)) !== null) {
+            const matchedText = match[0];
+            const analysis = this.vault
+              ? this.vault.analyzeContext(textContext, match.index, matchedText.length, cat)
+              : { shouldTokenize: true };
+
+            if (analysis.shouldTokenize) {
+              applyRedaction(cat, bbox, matchedText);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    try {
+      if (typeof document !== 'undefined' && document.body) {
+        const domItems = this.scanDOM(document);
+        for (const item of domItems) {
+          const b = item.boundingBox;
+          applyRedaction(item.category, [b.x, b.y, b.width, b.height], item.redactionLabel);
+        }
+      }
+    } catch (e) {}
+
+    return redactedRegions;
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // DOM SCANNER (runs in offscreen document context only)
   // ──────────────────────────────────────────────────────────────────────────
@@ -325,3 +441,14 @@ export class PrivacyEngine {
     });
   }
 }
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = PrivacyEngine;
+  module.exports.PrivacyEngine = PrivacyEngine;
+}
+if (typeof window !== 'undefined') {
+  window.PrivacyEngine = PrivacyEngine;
+}
+
+export default PrivacyEngine;
+
