@@ -48,18 +48,17 @@ export class LocalVisionModel {
         throw new Error("ONNX Runtime Web (ort) is not loaded!");
       }
       ort.env.wasm.wasmPaths = chrome.runtime.getURL('lib/ort/');
+      ort.env.wasm.numThreads = 1; // Prevent fetching missing threaded wasm & avoid COOP/COEP issues
       
       try {
-        // Try WebGPU first, fallback to WASM
-        ortSession = await ort.InferenceSession.create(chrome.runtime.getURL('models/yolo_pii_nano.onnx'), {
-          executionProviders: ['webgpu', 'wasm']
-        });
-        console.log("[LocalVisionModel] ONNX model loaded locally! Backend:", ortSession.executionProviders[0]);
-      } catch(e) {
-        console.warn("WebGPU failed, falling back to WASM", e);
+        // Use WASM directly (WebGPU requires ort.webgpu.min.js in v1.17+)
         ortSession = await ort.InferenceSession.create(chrome.runtime.getURL('models/yolo_pii_nano.onnx'), {
           executionProviders: ['wasm']
         });
+        console.log("[LocalVisionModel] ONNX model loaded natively! Backend:", ortSession.executionProviders[0]);
+      } catch(e) {
+        console.error("Failed to load ONNX model:", e);
+        throw e;
       }
     }
   }
@@ -79,14 +78,14 @@ export class LocalVisionModel {
         img.src = dataUrl;
       });
 
-      // YOLO typically uses 640x640
-      const INPUT_SIZE = 640;
+      // YOLO typically uses 640x640, but this distilled model expects 256x256!
+      const INPUT_SIZE = 256;
       const canvas = new OffscreenCanvas(INPUT_SIZE, INPUT_SIZE);
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
       const imgData = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
 
-      // Preprocess image to float32 tensor [1, 3, 640, 640]
+      // Preprocess image to float32 tensor [1, 3, 256, 256]
       const float32Data = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
       for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
         float32Data[i] = imgData.data[i * 4] / 255.0;                           // R
