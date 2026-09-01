@@ -61,7 +61,7 @@ export class LocalVisionModel {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
-          type: 'RUN_VISION_DETECTION',
+          type: 'PROXY_RUN_VISION_DETECTION',
           dataUrl: dataUrl,
           classes: this.classes,
           threshold: this.threshold

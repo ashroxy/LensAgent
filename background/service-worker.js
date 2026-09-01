@@ -1,4 +1,4 @@
-﻿/**
+/**
  * service-worker.js - MV3 Background Service Worker (Enhanced)
  * ==============================================================
  * Central orchestrator that wires all subsystems together.
@@ -207,6 +207,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
     case POPUP_START_AGENT:
       handleStartAgent(msg.goal, msg.settings, msg.targetTabId).then(sendResponse);
+      return true;
+
+    case "PROXY_RUN_VISION_DETECTION":
+      chrome.runtime.sendMessage({
+        type: 'RUN_VISION_DETECTION',
+        dataUrl: msg.dataUrl,
+        classes: msg.classes,
+        threshold: msg.threshold
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ error: chrome.runtime.lastError.message });
+        } else {
+          sendResponse(response);
+        }
+      });
       return true;
 
     case POPUP_STOP_AGENT:
