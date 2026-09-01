@@ -26,13 +26,14 @@ import {
 import { PrivacyEngine } from '../privacy_engine.js';
 import { LocalVisionModel } from '../vision_model.js';
 
-// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
+// =====================================================================================================================
 // TEAM INTEGRATION (Member 3)
-// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
+// =====================================================================================================================
 const privacyEngine = new PrivacyEngine({
   enableStrictZeroLeakage: true
 });
 
+const visionModel = new LocalVisionModel({ threshold: 0.15 });
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CANVAS SETUP
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -177,7 +178,7 @@ function connectPort() {
             if (port) port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result });
           } catch (err) {
             console.error("[Offscreen] Frame error:", err);
-            if (port) port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result: fallbackResult() });
+            if (port) port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, error: err.message, result: fallbackResult() });
           }
           break;
         }
@@ -224,6 +225,20 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   // 2. Structural element detection via Member 1 WebGPU Model
   const tInfer = performance.now();
   const elements = await visionModel.detect(rawBase64);
+  
+  // CRITICAL FIX: WebGPU processes physical pixels. PrivacyEngine scales by DPR.
+  // Divide by DPR here so PrivacyEngine's multiplier scales them perfectly back.
+  if (dpr !== 1) {
+    elements.forEach(el => {
+      if (el.boundingBox) {
+        el.boundingBox.x /= dpr;
+        el.boundingBox.y /= dpr;
+        el.boundingBox.width /= dpr;
+        el.boundingBox.height /= dpr;
+      }
+    });
+  }
+  
   const inferMs = performance.now() - tInfer;
 
   // 3. PII detection & canvas redaction via PrivacyEngine
@@ -300,7 +315,11 @@ function applySetOfMark(elements) {
 function decodeFrameToCanvas(base64) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload  = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(); };
+    img.onload  = () => { 
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
+      img.src = ""; // Clear memory immediately
+      resolve(); 
+    };
     img.onerror = ()  => reject(new Error("Image decode failed"));
     img.src = `data:image/jpeg;base64,${base64}`;
   });

@@ -111,8 +111,9 @@ export class PrivacyEngine {
       canvas.width = imageBitmap.width;
       canvas.height = imageBitmap.height;
     }
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(imageBitmap, 0, 0);
+    imageBitmap.close(); // CRITICAL: Free GPU memory immediately
 
     // 4. Draw Solid #000000 blackout boxes with padding
     ctx.fillStyle = '#000000';
