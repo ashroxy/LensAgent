@@ -96,11 +96,19 @@ export class PrivacyEngine {
     const tokenMap = [];
 
     // 3. Load image into Canvas
-    const dataUri = rawScreenshotBase64.startsWith('data:') 
-      ? rawScreenshotBase64 
-      : `data:image/jpeg;base64,${rawScreenshotBase64}`;
-    const imgBlob = await (await fetch(dataUri)).blob();
-    const imageBitmap = await createImageBitmap(imgBlob);
+    let imageBitmap;
+    
+    if (typeof rawScreenshotBase64 === 'string') {
+      // Re-attach data URI prefix if it's a raw base64 string from offscreen.js
+      const dataUrl = rawScreenshotBase64.startsWith('data:') 
+        ? rawScreenshotBase64 
+        : `data:image/jpeg;base64,${rawScreenshotBase64}`;
+        
+      const imgBlob = await (await fetch(dataUrl)).blob();
+      imageBitmap = await createImageBitmap(imgBlob);
+    } else {
+      imageBitmap = rawScreenshotBase64;
+    }
 
     // Support both OffscreenCanvas and standard DOM Canvas
     const canvas = (typeof OffscreenCanvas !== 'undefined')
@@ -138,14 +146,19 @@ export class PrivacyEngine {
     // 5. Export as WebP / JPEG base64
     let sanitizedImage;
     if (canvas.convertToBlob) {
-      const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+      const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
       sanitizedImage = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
     } else {
-      sanitizedImage = canvas.toDataURL('image/webp', 0.85);
+      sanitizedImage = canvas.toDataURL('image/jpeg', 0.85);
+    }
+    
+    // Strip the prefix so we return pure base64
+    if (sanitizedImage.includes(',')) {
+      sanitizedImage = sanitizedImage.split(',')[1];
     }
 
     const latency = Math.round(performance.now() - startTime);
