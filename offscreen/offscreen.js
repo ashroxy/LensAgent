@@ -23,15 +23,15 @@ import {
   HEARTBEAT_PING, HEARTBEAT_PONG,
   WebGPUStatus,
 } from "../lib/message-types.js";
-import { PrivacyEngine } from './privacy_engine.js';
+import { PrivacyEngine } from '../privacy_engine.js';
+import { LocalVisionModel } from '../vision_model.js';
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
 // TEAM INTEGRATION (Member 3)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
 const privacyEngine = new PrivacyEngine({
   enableStrictZeroLeakage: true
 });
-
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CANVAS SETUP
@@ -221,9 +221,9 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   await decodeFrameToCanvas(rawBase64);
   const decodeMs = performance.now() - tDecode;
 
-  // 2. Structural element detection
+  // 2. Structural element detection via Member 1 WebGPU Model
   const tInfer = performance.now();
-  const elements = extractStructuralElements(ctx, canvas.width, canvas.height);
+  const elements = await visionModel.detect(rawBase64);
   const inferMs = performance.now() - tInfer;
 
   // 3. PII detection & canvas redaction via PrivacyEngine

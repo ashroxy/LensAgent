@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PrivacyEngine & Vision Model Test Demo</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; background: #0f172a; color: #f8fafc; }
+    h1 { margin-top: 0; color: #38bdf8; }
+    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px; }
+    .card { background: #1e293b; padding: 20px; border-radius: 10px; border: 1px solid #334155; }
+    .field { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    input { width: 90%; padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; }
+    button { background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    button:hover { background: #0369a1; }
+    .badge { display: inline-block; padding: 4px 8px; background: #10b981; color: #fff; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    pre { background: #0f172a; padding: 12px; border-radius: 6px; overflow-x: auto; color: #a5f3fc; font-size: 12px; }
+    #canvas-preview { max-width: 100%; border-radius: 8px; border: 1px solid #475569; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🛡️ PrivacyEngine & WebGPU Redaction Demo</h1>
+  <p>Tests 100% deterministic DOM PII redaction + Member 1 ML bounding box fusion (<80ms).</p>
+
+  <div class="container">
+    <!-- Left Column: Live Form -->
+    <div class="card" id="form-container">
+      <h3>1. Live Webpage Viewport</h3>
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" data-pii="name" value="Jane Doe">
+      </div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" value="jane.doe@example.com">
+      </div>
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" value="+91 9876543210">
+      </div>
+      <div class="field">
+        <label>Credit Card Number</label>
+        <input type="text" autocomplete="cc-number" value="4111 2222 3333 4444">
+      </div>
+      <div class="field">
+        <label>Aadhaar / National ID</label>
+        <input type="text" data-pii="aadhaar" value="2345 6789 0123">
+      </div>
+      <button id="btn-run">📸 Run Real-Time Redaction</button>
+    </div>
+
+    <!-- Right Column: Results & Telemetry -->
+    <div class="card">
+      <h3>2. Sanitized Frame Output & Telemetry</h3>
+      <div id="status">Click "Run Real-Time Redaction" to test.</div>
+      <canvas id="canvas-preview" style="display:none;"></canvas>
+      <h4>Token Map & Telemetry:</h4>
+      <pre id="output-json">// Telemetry will appear here...</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { PrivacyEngine } from './privacy_engine.js';
+
+    const privacyEngine = new PrivacyEngine({ enableStrictZeroLeakage: true });
+
+    document.getElementById('btn-run').addEventListener('click', async () => {
+      const statusEl = document.getElementById('status');
+      statusEl.innerHTML = '⏳ Sanitizing viewport...';
+
+      // 1. Simulate Member 1 ML detections (e.g. detected face/avatar in viewport)
+      const customMlBoxes = [
+        {
+          id: 'ML_DETECTED_FACE_1',
+          category: 'FACE_AVATAR',
+          boundingBox: { x: 30, y: 15, width: 48, height: 48 },
+          redactionLabel: '[REDACTED_FACE_#1]'
+        }
+      ];
+
+      // 2. Generate synthetic screenshot frame of the card
+      const formEl = document.getElementById('form-container');
+      const rect = formEl.getBoundingClientRect();
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(rect.width);
+      canvas.height = Math.round(rect.height);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw dummy content text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '14px sans-serif';
+      ctx.fillText("Account Settings", 20, 30);
+      ctx.fillText("Jane Doe | jane.doe@example.com | 4111 2222 3333 4444", 20, 80);
+
+      const rawScreenshotBase64 = canvas.toDataURL('image/webp');
+
+      // 3. Run PrivacyEngine Sanitize Viewport
+      const { sanitizedImage, tokenMap, telemetry } = await privacyEngine.sanitizeViewport(
+        rawScreenshotBase64,
+        customMlBoxes,
+        window.devicePixelRatio || 1
+      );
+
+      // 4. Update UI
+      statusEl.innerHTML = `<span class="badge">⚡ Sanitized in ${telemetry.sanitizationLatencyMs}ms</span> Masked ${tokenMap.length} sensitive items with zero leakage!`;
+      
+      const imgPreview = new Image();
+      imgPreview.onload = () => {
+        const previewCanvas = document.getElementById('canvas-preview');
+        previewCanvas.style.display = 'block';
+        previewCanvas.width = imgPreview.width;
+        previewCanvas.height = imgPreview.height;
+        const pctx = previewCanvas.getContext('2d');
+        pctx.drawImage(imgPreview, 0, 0);
+      };
+      imgPreview.src = sanitizedImage;
+
+      document.getElementById('output-json').textContent = JSON.stringify({
+        telemetry,
+        tokenMap
+      }, null, 2);
+    });
+  </script>
+</body>
+</html>
