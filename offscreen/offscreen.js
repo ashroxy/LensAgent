@@ -219,18 +219,21 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   const tInfer = performance.now();
   const elements = await visionModel.detect(rawBase64);
   
-  // CRITICAL FIX: WebGPU processes physical pixels. PrivacyEngine scales by DPR.
-  // Divide by DPR here so PrivacyEngine's multiplier scales them perfectly back.
-  if (dpr !== 1) {
-    elements.forEach(el => {
-      if (el.boundingBox) {
-        el.boundingBox.x /= dpr;
-        el.boundingBox.y /= dpr;
-        el.boundingBox.width /= dpr;
-        el.boundingBox.height /= dpr;
+  // CRITICAL FIX: WebGPU elements are ALREADY in physical pixels (from the raw screenshot).
+  // But piiBoxes (from action-executor DOM) are in CSS pixels!
+  // We must multiply piiBoxes by DPR to match the physical canvas of PrivacyEngine.
+  const scaledPiiBoxes = piiBoxes.map(box => {
+    if (!box || !box.boundingBox) return box;
+    return {
+      ...box,
+      boundingBox: {
+        x: Math.round(box.boundingBox.x * dpr),
+        y: Math.round(box.boundingBox.y * dpr),
+        width: Math.round(box.boundingBox.width * dpr),
+        height: Math.round(box.boundingBox.height * dpr)
       }
-    });
-  }
+    };
+  });
   
   const inferMs = performance.now() - tInfer;
 
@@ -238,7 +241,7 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   const tRedact = performance.now();
   const { sanitizedImage, tokenMap } = await privacyEngine.sanitizeViewport(
     rawBase64,
-    [...elements, ...piiBoxes],
+    [...elements, ...scaledPiiBoxes],
     dpr
   );
   const redactMs = performance.now() - tRedact;

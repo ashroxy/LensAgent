@@ -82,7 +82,20 @@ export class LocalVisionModel {
       const INPUT_SIZE = 256;
       const canvas = new OffscreenCanvas(INPUT_SIZE, INPUT_SIZE);
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
+      
+      // CRITICAL FIX: Preserve aspect ratio (Letterboxing) instead of squashing!
+      // Squashing destroys aspect ratio and causes the model to predict massive bounding box widths.
+      const scale = Math.min(INPUT_SIZE / img.width, INPUT_SIZE / img.height);
+      const newW = Math.round(img.width * scale);
+      const newH = Math.round(img.height * scale);
+      const padX = (INPUT_SIZE - newW) / 2;
+      const padY = (INPUT_SIZE - newH) / 2;
+      
+      // Fill with gray padding (standard YOLO padding)
+      ctx.fillStyle = '#787878';
+      ctx.fillRect(0, 0, INPUT_SIZE, INPUT_SIZE);
+      ctx.drawImage(img, padX, padY, newW, newH);
+      
       const imgData = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
 
       // Preprocess image to float32 tensor [1, 3, 256, 256]
@@ -101,8 +114,10 @@ export class LocalVisionModel {
       const dims = results[outputName].dims; // e.g. [1, 84, 8400] for YOLOv8 or [1, 8400, 85] for YOLOv5
 
       let rawBoxes = [];
-      const rx = img.width / INPUT_SIZE;
-      const ry = img.height / INPUT_SIZE;
+      
+      // Scaling factors to map from padded 256x256 back to original image
+      const rx = img.width / newW;
+      const ry = img.height / newH;
 
       if (dims.length === 3 && dims[1] < dims[2]) {
         // YOLOv8 Format: [1, num_features, num_anchors]
@@ -123,10 +138,10 @@ export class LocalVisionModel {
             const w  = output[2 * num_anchors + i];
             const h  = output[3 * num_anchors + i];
 
-            const xmin = (xc - w / 2) * rx;
-            const ymin = (yc - h / 2) * ry;
-            const xmax = (xc + w / 2) * rx;
-            const ymax = (yc + h / 2) * ry;
+            const xmin = ((xc - w / 2) - padX) * rx;
+            const ymin = ((yc - h / 2) - padY) * ry;
+            const xmax = ((xc + w / 2) - padX) * rx;
+            const ymax = ((yc + h / 2) - padY) * ry;
 
             rawBoxes.push({ box: { xmin, ymin, xmax, ymax }, score: maxScore });
           }
@@ -153,10 +168,10 @@ export class LocalVisionModel {
             const w  = output[i * num_features + 2];
             const h  = output[i * num_features + 3];
 
-            const xmin = (xc - w / 2) * rx;
-            const ymin = (yc - h / 2) * ry;
-            const xmax = (xc + w / 2) * rx;
-            const ymax = (yc + h / 2) * ry;
+            const xmin = ((xc - w / 2) - padX) * rx;
+            const ymin = ((yc - h / 2) - padY) * ry;
+            const xmax = ((xc + w / 2) - padX) * rx;
+            const ymax = ((yc + h / 2) - padY) * ry;
 
             rawBoxes.push({ box: { xmin, ymin, xmax, ymax }, score: maxScore });
           }
