@@ -55,7 +55,7 @@ export class LocalVisionModel {
         ortSession = await ort.InferenceSession.create(chrome.runtime.getURL('models/yolo_pii_nano.onnx'), {
           executionProviders: ['wasm']
         });
-        console.log("[LocalVisionModel] ONNX model loaded natively! Backend:", ortSession.executionProviders[0]);
+        console.log("[LocalVisionModel] ONNX model loaded natively via WASM!");
       } catch(e) {
         console.error("Failed to load ONNX model:", e);
         throw e;

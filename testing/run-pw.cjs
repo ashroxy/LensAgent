@@ -15,41 +15,39 @@ const path = require('path');
   if (!background) {
     try { background = await context.waitForEvent('serviceworker', { timeout: 3000 }); } catch(e) {}
   }
-  const extId = background.url().split('/')[2];
+
+  background.on('console', msg => console.log('[SW Console]', msg.type(), msg.text()));
 
   const testPage = await context.newPage();
+  await testPage.goto('https://example.com');
   
-  testPage.on('requestfailed', request => {
-    console.log('[Network Error] ' + request.url() + ' - ' + request.failure().errorText);
-  });
-  
-  testPage.on('console', msg => console.log('[Offscreen Console]', msg.type(), msg.text()));
-  testPage.on('pageerror', error => console.log('[Offscreen Page Error]', error.message));
-  
-  await testPage.goto(`chrome-extension://${extId}/offscreen/offscreen.html`);
-  
-  // Wait for initialization
+  // Wait for the extension to initialize
   await testPage.waitForTimeout(2000);
   
-  // Simulate a process frame message
-  await testPage.evaluate(async () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 100; canvas.height = 100;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'white'; ctx.fillRect(0,0,100,100);
-    const b64 = canvas.toDataURL('image/jpeg').split(',')[1];
-    
-    const { LocalVisionModel } = await import('../vision_model.js');
-    const vm = new LocalVisionModel();
-    try {
-      const res = await vm.detect(b64);
-      console.log('Detect result:', res);
-    } catch (e) {
-      console.error('Detect error:', e);
-    }
+  // Run agent start!
+  await background.evaluate(async () => {
+    // There is a handleStartAgent function in service-worker, but it's not exported.
+    // However, we can send a message to it!
+    chrome.runtime.sendMessage({
+      type: 'POPUP_START_AGENT',
+      goal: 'test',
+      settings: {},
+      targetTabId: null
+    });
   });
 
-  await testPage.waitForTimeout(2000);
+  await testPage.waitForTimeout(5000);
+  
+  const logs = await background.evaluate(async () => {
+    return new Promise(resolve => {
+      chrome.runtime.sendMessage({ type: 'POPUP_EXPORT_LOG' }, (res) => {
+        resolve(res ? res.text : 'No logs');
+      });
+    });
+  });
+  console.log("=== LOGS ===");
+  console.log(logs);
+
   console.log('Done.');
   await context.close();
 })();
