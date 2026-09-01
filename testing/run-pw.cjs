@@ -16,35 +16,30 @@ const path = require('path');
     try { background = await context.waitForEvent('serviceworker', { timeout: 3000 }); } catch(e) {}
   }
 
-  background.on('console', msg => console.log('[SW Console]', msg.type(), msg.text()));
+  const extId = background.url().split('/')[2];
 
   const testPage = await context.newPage();
-  await testPage.goto('https://example.com');
   
-  // Wait for the extension to initialize
+  // Navigate to popup to click start!
+  await testPage.goto(`chrome-extension://${extId}/popup/popup.html`);
+  
+  // Wait for it
   await testPage.waitForTimeout(2000);
   
-  // Run agent start!
-  await background.evaluate(async () => {
-    // There is a handleStartAgent function in service-worker, but it's not exported.
-    // However, we can send a message to it!
-    chrome.runtime.sendMessage({
-      type: 'POPUP_START_AGENT',
-      goal: 'test',
-      settings: {},
-      targetTabId: null
-    });
-  });
+  // Click start agent
+  await testPage.fill('#goalInput', 'test goal');
+  await testPage.click('#startBtn');
 
   await testPage.waitForTimeout(5000);
-  
-  const logs = await background.evaluate(async () => {
+
+  const logs = await testPage.evaluate(async () => {
     return new Promise(resolve => {
       chrome.runtime.sendMessage({ type: 'POPUP_EXPORT_LOG' }, (res) => {
         resolve(res ? res.text : 'No logs');
       });
     });
   });
+  
   console.log("=== LOGS ===");
   console.log(logs);
 
