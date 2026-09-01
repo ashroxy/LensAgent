@@ -1,11 +1,8 @@
-const fs = require('fs');
-let content = fs.readFileSync('lib/action-executor.js', 'utf8');
-
-const newScan = \
+class A { 
   async scanDOMForPii() {
     try {
       const res = await this._cdp("Runtime.evaluate", {
-        expression: \\\
+        expression: \
           (function() {
             try {
               if (window.__lensAgentPiiDirty === undefined) {
@@ -13,8 +10,6 @@ const newScan = \
                 window.__lensAgentElements = [];
                 const obs = new MutationObserver(() => { window.__lensAgentPiiDirty = true; });
                 obs.observe(document, { childList: true, subtree: true, characterData: true, attributes: true });
-                window.addEventListener('scroll', () => { window.__lensAgentPiiDirty = true; }, {passive: true, capture: true});
-                window.addEventListener('resize', () => { window.__lensAgentPiiDirty = true; }, {passive: true});
               }
 
               if (!window.__lensAgentPiiDirty && window.__lensAgentElements) {
@@ -153,7 +148,7 @@ const newScan = \
               return [];
             }
           })()
-        \\\,
+        \,
         returnByValue: true,
       });
       return res?.result?.value || [];
@@ -162,14 +157,5 @@ const newScan = \
       return [];
     }
   }
-\;
 
-const startIdx = content.indexOf('async scanDOMForPii() {');
-const endIdx = content.indexOf('async getPageMetadataAndElements() {');
-if (startIdx !== -1 && endIdx !== -1) {
-  content = content.substring(0, startIdx) + newScan + "\n\n  " + content.substring(endIdx);
-  fs.writeFileSync('lib/action-executor.js', content);
-  console.log('Patched');
-} else {
-  console.log('Not found', startIdx, endIdx);
 }
