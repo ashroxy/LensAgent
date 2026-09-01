@@ -54,11 +54,15 @@ export class LocalVisionModel {
    * @returns {Promise<Array>} customMlBoxes
    */
   async detect(rawScreenshotBase64) {
+    const dataUrl = rawScreenshotBase64.startsWith('data:') 
+      ? rawScreenshotBase64 
+      : `data:image/jpeg;base64,${rawScreenshotBase64}`;
+
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: 'RUN_VISION_DETECTION',
-          dataUrl: rawScreenshotBase64,
+          dataUrl: dataUrl,
           classes: this.classes,
           threshold: this.threshold
         },

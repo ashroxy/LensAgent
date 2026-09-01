@@ -96,7 +96,10 @@ export class PrivacyEngine {
     const tokenMap = [];
 
     // 3. Load image into Canvas
-    const imgBlob = await (await fetch(rawScreenshotBase64)).blob();
+    const dataUri = rawScreenshotBase64.startsWith('data:') 
+      ? rawScreenshotBase64 
+      : `data:image/jpeg;base64,${rawScreenshotBase64}`;
+    const imgBlob = await (await fetch(dataUri)).blob();
     const imageBitmap = await createImageBitmap(imgBlob);
 
     // Support both OffscreenCanvas and standard DOM Canvas
