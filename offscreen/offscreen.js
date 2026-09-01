@@ -38,12 +38,7 @@ const visionModel = new LocalVisionModel({ threshold: 0.15 });
 // CANVAS SETUP
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-const canvas = document.getElementById("inferenceCanvas");
-const ctx    = canvas.getContext("2d", { willReadFrequently: true });
 
-// For async, non-blocking JPEG export (much faster than toDataURL)
-const offscreenExportCanvas = new OffscreenCanvas(1280, 720);
-const offscreenExportCtx    = offscreenExportCanvas.getContext("2d");
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // WEBGPU INITIALIZATION
@@ -121,8 +116,6 @@ async function warmUpInference() {
   warmCtx.fillStyle = "#808080";
   warmCtx.fillRect(0, 0, 640, 640);
 
-  // Call the structural element extraction (triggers model warm-up in production)
-  extractStructuralElements(warmCtx, 640, 640);
   console.log("[Offscreen] Warm-up inference pass complete.");
 }
 
@@ -159,11 +152,13 @@ async function getCachedModel(url) {
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// =====================================================================================================================
 // PORT CONNECTION & AUTO-RECONNECT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// =====================================================================================================================
 
 let port = null;
+
+
 
 function connectPort() {
   try {
@@ -209,18 +204,16 @@ function reportGPUStatus() {
   if (port) port.postMessage({ type: OS_WEBGPU_STATUS, status: gpuStatus });
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// =====================================================================================================================
 // FRAME PROCESSING PIPELINE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// =====================================================================================================================
 
 async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
   const t0 = performance.now();
   frameCount++;
 
   // 1. Decode frame
-  const tDecode = performance.now();
-  await decodeFrameToCanvas(rawBase64);
-  const decodeMs = performance.now() - tDecode;
+  const decodeMs = 0; // Handled internally by privacy engine
 
   // 2. Structural element detection via Member 1 WebGPU Model
   const tInfer = performance.now();
@@ -312,68 +305,8 @@ function applySetOfMark(elements) {
   }
 }
 
-function decodeFrameToCanvas(base64) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload  = () => { 
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height); 
-      img.src = ""; // Clear memory immediately
-      resolve(); 
-    };
-    img.onerror = ()  => reject(new Error("Image decode failed"));
-    img.src = `data:image/jpeg;base64,${base64}`;
-  });
-}
 
-/**
- * Export the canvas as base64 JPEG using OffscreenCanvas.convertToBlob()
- * for async, non-blocking encoding (much faster than sync toDataURL).
- */
-async function exportCanvasAsBase64() {
-  // Copy current canvas to the offscreen export canvas
-  offscreenExportCtx.drawImage(canvas, 0, 0);
 
-  try {
-    const blob = await offscreenExportCanvas.convertToBlob({ type: "image/jpeg", quality: 0.75 });
-    const buffer = await blob.arrayBuffer();
-    // Convert ArrayBuffer â†’ base64
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  } catch {
-    // Fallback to synchronous toDataURL
-    return canvas.toDataURL("image/jpeg", 0.75).split(",")[1];
-  }
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MOCK: STRUCTURAL ELEMENT DETECTION (Member 2 replaces this)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-/**
- * Extracts interactable UI elements from the viewport using the ONNX model.
- * 
- * @param {CanvasRenderingContext2D} context - The canvas context containing the current frame
- * @param {number} width - Canvas width in physical pixels
- * @param {number} height - Canvas height in physical pixels
- * @returns {import('../lib/message-types.js').BoundingBox[]} Detected UI elements
- */
-function extractStructuralElements(context, width, height) {
-  // Production: ONNX Runtime Web + quantized YOLOv8-nano / MobileViT
-  return [
-    { id: 1, type: "input",   bbox: [200, 120, 500, 40],  confidence: 0.97, label: "Search input" },
-    { id: 2, type: "button",  bbox: [720, 120, 100, 40],  confidence: 0.95, label: "Search button" },
-    { id: 3, type: "link",    bbox: [50,  20,  80,  25],  confidence: 0.91, label: "Nav link" },
-    { id: 4, type: "link",    bbox: [150, 20,  90,  25],  confidence: 0.89, label: "Nav link" },
-    { id: 5, type: "heading", bbox: [100, 200, 600, 30],  confidence: 0.93, label: "Page heading" },
-    { id: 6, type: "button",  bbox: [300, 500, 140, 45],  confidence: 0.94, label: "Submit" },
-    { id: 7, type: "input",   bbox: [200, 300, 400, 38],  confidence: 0.92, label: "Text field" },
-    { id: 8, type: "select",  bbox: [200, 360, 200, 38],  confidence: 0.90, label: "Dropdown" },
-  ];
-}
 
 
 
