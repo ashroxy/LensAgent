@@ -99,7 +99,7 @@ export class PrivacyEngine {
         width:  el.bbox ? el.bbox[2] : (el.width  || 0),
         height: el.bbox ? el.bbox[3] : (el.height || 0),
       },
-      redactionLabel: null, // will be assigned during canvas pass
+      redactionLabel: el.redactionLabel ?? null, // preserve existing or assign during canvas pass
       needsTextScan: true
     }))];
 

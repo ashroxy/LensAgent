@@ -97,6 +97,27 @@ export class SessionVaultManager {
     return input.replace(/\[SYS_[A-Z0-9_]+\]/g, (m) => this.vault.has(m) ? this.vault.get(m) : m);
   }
 
+  /**
+   * Gets available key names from the vault (for backend available_keys field)
+   * @returns {string[]} Array of key names (not values)
+   */
+  getAvailableKeyNames() {
+    // Return just the key names (e.g., ["EMAIL", "PAN", "PHONE"])
+    // These are stored in the vault entries as the original category names
+    const keyNames = new Set();
+    for (const [alias, secret] of this.vault.entries()) {
+      // Extract key name from alias like [SYS_EMAIL_01] -> EMAIL
+      const match = alias.match(/\[SYS_([A-Z]+)_\d+\]/);
+      if (match) {
+        keyNames.add(match[1]); // Return just the category (EMAIL, PAN, etc.)
+      } else {
+        // Fallback: use the secret itself as key (not ideal but functional)
+        keyNames.add(secret);
+      }
+    }
+    return Array.from(keyNames);
+  }
+
   hasAlias(alias) { return this.vault.has(alias); }
   getVaultSize() { return this.vault.size; }
 
