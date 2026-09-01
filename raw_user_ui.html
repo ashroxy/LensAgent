@@ -1,0 +1,1262 @@
+<USER_REQUEST>
+<!-- LensAgent Control Center (Reorganized) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LensAgent Control Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#002205",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary": "#895032",
+                        "surface-container-highest": "#e0e2e6",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f7f9fd",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#b4f2af",
+                        "surface-bright": "#f7f9fd",
+                        "on-primary": "#ffffff",
+                        "outline": "#737781",
+                        "primary-container": "#89b4fa",
+                        "on-secondary-container": "#794225",
+                        "on-tertiary-fixed-variant": "#19511f",
+                        "on-primary-container": "#094583",
+                        "surface-dim": "#d8dade",
+                        "tertiary": "#336a35",
+                        "outline-variant": "#c3c6d2",
+                        "on-primary-fixed": "#001b3c",
+                        "on-secondary-fixed-variant": "#6d391d",
+                        "surface": "#f7f9fd",
+                        "on-surface-variant": "#424750",
+                        "surface-variant": "#e0e2e6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#305f9f",
+                        "on-surface": "#191c1f",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#ffdbcb",
+                        "tertiary-container": "#86c182",
+                        "tertiary-fixed-dim": "#99d595",
+                        "surface-container-low": "#f2f4f8",
+                        "inverse-primary": "#a8c8ff",
+                        "on-tertiary-container": "#174f1e",
+                        "surface-container": "#eceef2",
+                        "secondary-container": "#feb28d",
+                        "on-background": "#191c1f",
+                        "primary-fixed-dim": "#a8c8ff",
+                        "on-secondary-fixed": "#341100",
+                        "on-primary-fixed-variant": "#0e4685",
+                        "surface-container-high": "#e6e8ec",
+                        "inverse-on-surface": "#eff1f5",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2d3134",
+                        "secondary-fixed-dim": "#ffb692",
+                        "surface-tint": "#305f9f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "8px",
+                        "sm": "12px",
+                        "gutter": "16px",
+                        "margin-mobile": "20px",
+                        "md": "24px",
+                        "lg": "40px",
+                        "margin-desktop": "64px",
+                        "sidebar": "260px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Neumorphic Utilities */
+        .neu-flat {
+            background: #f7f9fd;
+            box-shadow: 6px 6px 14px #dce1eb, -6px -6px 14px #ffffff;
+        }
+        .neu-flat:active {
+            box-shadow: inset 4px 4px 8px #dce1eb, inset -4px -4px 8px #ffffff;
+        }
+        .neu-pressed {
+            background: #f7f9fd;
+            box-shadow: inset 6px 6px 12px #dce1eb, inset -6px -6px 12px #ffffff;
+        }
+        .neu-convex {
+            background: linear-gradient(145deg, #ffffff, #dee1e4);
+            box-shadow: 8px 8px 16px #dce1eb, -8px -8px 16px #ffffff;
+        }
+        .neu-concave {
+            background: linear-gradient(145deg, #dee1e4, #ffffff);
+            box-shadow: 8px 8px 16px #dce1eb, -8px -8px 16px #ffffff;
+        }
+        
+        /* Neumorphic Buttons */
+        .neu-btn {
+            background: #f7f9fd;
+            box-shadow: 4px 4px 10px #dce1eb, -4px -4px 10px #ffffff;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .neu-btn:hover {
+            box-shadow: 6px 6px 12px #dce1eb, -6px -6px 12px #ffffff;
+            transform: translateY(-1px);
+        }
+        .neu-btn:active {
+            box-shadow: inset 4px 4px 8px #dce1eb, inset -4px -4px 8px #ffffff;
+            transform: translateY(1px);
+        }
+
+        .neu-btn-primary {
+            background: linear-gradient(145deg, #e5edff, #c0d3fa);
+            box-shadow: 4px 4px 10px #dce1eb, -4px -4px 10px #ffffff;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .neu-btn-primary:hover {
+            box-shadow: 6px 6px 12px #dce1eb, -6px -6px 12px #ffffff;
+            transform: translateY(-1px);
+        }
+        .neu-btn-primary:active {
+            box-shadow: inset 4px 4px 8px #b1c8f5, inset -4px -4px 8px #ffffff;
+            transform: translateY(1px);
+        }
+
+        /* Nav Item Styles */
+        .nav-item {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 0;
+            width: 4px;
+            background-color: #305f9f;
+            border-radius: 0 4px 4px 0;
+            transition: height 0.2s ease;
+        }
+        .nav-item.active {
+            color: #305f9f;
+            background: rgba(137, 180, 250, 0.1);
+        }
+        .nav-item.active::before {
+            height: 24px;
+        }
+        .nav-item:hover:not(.active) {
+            background: rgba(137, 180, 250, 0.05);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d8dade;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c3c6d2;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen overflow-x-hidden pt-[88px] pb-12 pl-[260px] flex flex-col">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-low w-sidebar h-screen fixed left-0 top-0 flex flex-col py-margin-desktop z-50 neu-flat">
+<div class="px-8 mb-12 flex flex-col gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">LensAgent</span>
+<span class="text-[11px] text-outline font-mono tracking-widest uppercase">v1.0.4-stable</span>
+</div>
+<div class="flex-1 flex flex-col gap-2 w-full px-4">
+<button class="nav-item active flex items-center gap-4 px-6 py-4 rounded-xl font-body-lg text-body-lg text-on-surface w-full text-left" id="tab-agent">
+<span class="material-symbols-outlined text-[24px]">smart_toy</span>
+<span class="">Agent</span>
+</button>
+<button class="nav-item flex items-center gap-4 px-6 py-4 rounded-xl font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface w-full text-left" id="nav-btn">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+<span class="">Settings</span>
+</button>
+<button class="nav-item flex items-center gap-4 px-6 py-4 rounded-xl font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface w-full text-left">
+<span class="material-symbols-outlined text-[24px]">history</span>
+<span class="">History</span>
+</button>
+<button class="nav-item flex items-center gap-4 px-6 py-4 rounded-xl font-body-lg text-body-lg text-on-surface-variant hover:text-on-surface w-full text-left">
+<span class="material-symbols-outlined text-[24px]">lock</span>
+<span class="">Vault</span>
+</button>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-[260px] h-[88px] bg-background/80 backdrop-blur-md z-40 flex items-center justify-between px-margin-desktop">
+<div class="font-headline-lg text-headline-lg font-bold text-on-surface">LensAgent</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<button class="neu-btn p-3 rounded-full text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">sensors</span>
+</button>
+<button class="neu-btn p-3 rounded-full text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">memory</span>
+</button>
+<button class="neu-btn p-3 rounded-full text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">speed</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="px-margin-desktop w-full max-w-[1440px] mx-auto flex-1 flex flex-col" id="tab-content">
+<!-- Top Controls Row -->
+<div class="flex flex-col xl:flex-row gap-8 items-end mb-8">
+<div class="flex-1 w-full">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-3 ml-4 uppercase tracking-wider">Agent Goal</label>
+<div class="neu-pressed rounded-full px-6 py-4 flex items-center gap-4 border-2 border-transparent focus-within:border-primary/20 transition-all group">
+<span class="material-symbols-outlined text-primary">target</span>
+<input class="bg-transparent border-none outline-none w-full font-body-lg text-body-lg text-on-surface placeholder:text-outline/60 focus:ring-0 p-0" id="goalInput" placeholder="Enter objective..." type="text" value="Monitor checkout flow for anomalies"/>
+</div>
+</div>
+<div class="flex gap-4 shrink-0">
+<button class="neu-btn-primary text-primary px-8 py-4 rounded-full font-label-md text-label-md flex items-center gap-3 uppercase tracking-wider" id="startBtn">
+<span class="material-symbols-outlined">play_arrow</span>
+                    Start Agent
+                </button>
+<button class="neu-btn text-error px-8 py-4 rounded-full font-label-md text-label-md flex items-center gap-3 uppercase tracking-wider" id="stopBtn">
+<span class="material-symbols-outlined">stop</span>
+                    Halt
+                </button>
+</div>
+</div>
+<!-- Layout Grid -->
+<div class="flex flex-col gap-8 flex-1">
+<!-- Top Row: Video Feeds -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Raw Viewport -->
+<div class="neu-flat rounded-[32px] p-8 flex flex-col h-[400px]">
+<span class="font-label-md text-label-md text-on-surface-variant mb-6 ml-2 uppercase tracking-wider">Raw Viewport</span>
+<div class="flex-1 neu-pressed rounded-2xl relative overflow-hidden">
+<canvas class="w-full h-full object-cover opacity-60 grayscale mix-blend-luminosity" id="liveStream"></canvas>
+</div>
+</div>
+<!-- Sanitized Stream -->
+<div class="neu-flat rounded-[32px] p-8 flex flex-col h-[400px]">
+<div class="flex justify-between items-center mb-6">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-2">Sanitized Stream</span>
+<div class="neu-pressed px-4 py-2 rounded-full flex items-center gap-3">
+<div class="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></div>
+<span class="font-mono text-label-sm text-tertiary uppercase tracking-widest">Live</span>
+</div>
+</div>
+<div class="flex-1 neu-pressed rounded-2xl relative overflow-hidden group">
+<canvas class="w-full h-full object-cover rounded-2xl" id="annotatedStream"></canvas>
+<!-- Mock visual overlay -->
+<div class="absolute top-6 left-6 border-2 border-primary/40 bg-primary/10 px-3 py-1.5 rounded-lg text-[11px] font-mono text-primary backdrop-blur-md shadow-sm">
+                            bounding_box_detected
+                        </div>
+</div>
+</div>
+</div>
+<!-- Middle Row: Metrics -->
+<div class="neu-flat rounded-[32px] p-8 flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant mb-6 ml-2 uppercase tracking-wider">System Metrics</span>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-1">
+<div class="neu-pressed rounded-2xl p-6 flex flex-col justify-center items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Redactions</span>
+<span class="font-headline-lg text-headline-lg text-primary" id="redactionCount">42</span>
+</div>
+<div class="neu-pressed rounded-2xl p-6 flex flex-col justify-center items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Latency</span>
+<span class="font-headline-lg text-headline-lg text-primary"><span class="" id="latencyMs">12</span>ms</span>
+</div>
+<div class="neu-pressed rounded-2xl p-6 flex flex-col justify-center items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">FPS</span>
+<span class="font-headline-lg text-headline-lg text-primary" id="fpsCount">60</span>
+</div>
+<div class="neu-pressed rounded-2xl p-6 flex flex-col justify-center items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Dropped</span>
+<span class="font-headline-lg text-headline-lg text-error" id="skippedCount">0</span>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Terminal -->
+<div class="flex flex-col h-[300px]">
+<div class="neu-flat rounded-[32px] p-8 flex flex-col h-full"><div class="flex justify-between items-center mb-6 px-2">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[22px]">terminal</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Execution Log</span>
+</div>
+<button class="neu-btn px-5 py-2 rounded-full text-on-surface-variant hover:text-primary font-label-sm text-label-sm flex items-center gap-2 uppercase tracking-wider transition-all" id="exportLogBtn">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span class="">Export</span>
+</button>
+</div>
+<div class="flex-1 neu-pressed rounded-2xl bg-surface-container-low p-6 overflow-y-auto border border-white/40">
+<div class="font-mono text-[13px] leading-relaxed text-on-surface-variant flex flex-col gap-4" id="terminalBody">
+<div class="flex gap-4 items-start">
+<span class="text-outline/50 shrink-0 tabular-nums">10:42:01</span>
+<span class="text-primary font-bold shrink-0 w-14">[INFO]</span>
+<span class="text-on-surface">Agent initialized. Target: Monitor checkout flow.</span>
+</div>
+<div class="flex gap-4 items-start">
+<span class="text-outline/50 shrink-0 tabular-nums">10:42:02</span>
+<span class="text-primary-fixed-dim font-bold shrink-0 w-14">[SYS]</span>
+<span class="text-on-surface">Connecting to viewport stream...</span>
+</div>
+<div class="flex gap-4 items-start">
+<span class="text-outline/50 shrink-0 tabular-nums">10:42:02</span>
+<span class="text-tertiary font-bold shrink-0 w-14">[OK]</span>
+<span class="text-on-surface">Stream connected (60fps, 12ms latency).</span>
+</div>
+<div class="flex gap-4 items-start">
+<span class="text-outline/50 shrink-0 tabular-nums">10:42:05</span>
+<span class="text-secondary font-bold shrink-0 w-14">[WARN]</span>
+<span class="text-on-surface">Detected PII in raw viewport. Applying redaction mask.</span>
+</div>
+<div class="flex gap-4 items-start">
+<span class="text-outline/50 shrink-0 tabular-nums">10:42:06</span>
+<span class="text-primary font-bold shrink-0 w-14">[INFO]</span>
+<span class="text-on-surface">Action: Clicked 'Proceed to Payment'.</span>
+</div>
+<div class="flex gap-4 items-start opacity-40">
+<span class="text-outline/50 shrink-0 tabular-nums">10:42:07</span>
+<span class="text-on-surface italic">Awaiting DOM update...</span>
+</div>
+</div>
+</div></div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-8 px-margin-desktop w-full max-w-[1440px] mx-auto flex items-center justify-between z-40">
+<div class="font-mono text-label-sm text-outline tracking-wider">System Health: Optimal | LensAgent CLI v1.0.4</div>
+<div class="flex gap-6">
+<a class="font-mono text-label-sm text-outline hover:text-primary transition-colors tracking-wider uppercase" href="#">Docs</a>
+<a class="font-mono text-label-sm text-outline hover:text-primary transition-colors tracking-wider uppercase" href="#">Logs</a>
+<a class="font-mono text-label-sm text-outline hover:text-primary transition-colors tracking-wider uppercase" href="#">Terminal</a>
+</div>
+</footer>
+<!-- Hidden Modals -->
+<div class="hidden fixed inset-0 bg-surface/80 backdrop-blur-md z-[100] flex items-center justify-center p-4" id="hitlOverlay">
+<div class="neu-flat rounded-[32px] p-10 max-w-md w-full text-center flex flex-col items-center">
+<div class="neu-pressed w-20 h-20 rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-error text-[40px]">warning</span>
+</div>
+<h2 class="font-headline-md text-headline-md mb-3 text-on-surface">Human Intervention Required</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8">Agent encountered an ambiguous state during checkout.</p>
+<div class="flex gap-4 w-full">
+<button class="neu-btn flex-1 py-4 rounded-full font-label-md text-label-md text-on-surface uppercase tracking-wider">Abort</button>
+<button class="neu-btn-primary flex-1 py-4 rounded-full font-label-md text-label-md text-primary uppercase tracking-wider">Take Control</button>
+</div>
+</div>
+</div>
+<div class="hidden fixed inset-0 bg-surface/80 backdrop-blur-md z-[100] flex items-center justify-center p-4" id="approvalOverlay">
+<div class="neu-flat rounded-[32px] p-10 max-w-md w-full text-center flex flex-col items-center">
+<div class="neu-pressed w-20 h-20 rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-primary text-[40px]">fact_check</span>
+</div>
+<h2 class="font-headline-md text-headline-md mb-3 text-on-surface">Action Approval</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8">Agent is about to submit a form with destructive consequences.</p>
+<div class="flex gap-4 w-full">
+<button class="neu-btn flex-1 py-4 rounded-full font-label-md text-label-md text-on-surface uppercase tracking-wider">Reject</button>
+<button class="neu-btn-primary flex-1 py-4 rounded-full font-label-md text-label-md text-primary uppercase tracking-wider">Approve</button>
+</div>
+</div>
+</div>
+</body></html>
+
+<!-- LensAgent System Settings (Refined Neumorphic) -->
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LensAgent System Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#794225",
+                        "surface-container-highest": "#e0e2e6",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#424750",
+                        "inverse-on-surface": "#eff1f5",
+                        "tertiary-fixed-dim": "#99d595",
+                        "surface-container-low": "#f2f4f8",
+                        "background": "#f7f9fd",
+                        "tertiary-container": "#86c182",
+                        "surface": "#f7f9fd",
+                        "secondary": "#895032",
+                        "on-secondary-fixed": "#341100",
+                        "inverse-primary": "#a8c8ff",
+                        "outline-variant": "#c3c6d2",
+                        "on-primary-container": "#094583",
+                        "secondary-container": "#feb28d",
+                        "on-secondary-fixed-variant": "#6d391d",
+                        "tertiary": "#336a35",
+                        "primary-fixed-dim": "#a8c8ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ec",
+                        "surface-bright": "#f7f9fd",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-fixed-dim": "#ffb692",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#19511f",
+                        "on-tertiary-fixed": "#002205",
+                        "on-surface": "#191c1f",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#0e4685",
+                        "primary-container": "#89b4fa",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#174f1e",
+                        "inverse-surface": "#2d3134",
+                        "surface-tint": "#305f9f",
+                        "secondary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#001b3c",
+                        "outline": "#737781",
+                        "surface-dim": "#d8dade",
+                        "surface-container": "#eceef2",
+                        "surface-variant": "#e0e2e6",
+                        "tertiary-fixed": "#b4f2af",
+                        "error": "#ba1a1a",
+                        "on-background": "#191c1f",
+                        "primary": "#305f9f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "margin-mobile": "20px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "gutter": "16px",
+                        "base": "8px",
+                        "lg": "40px",
+                        "xs": "4px",
+                        "sidebar-width": "280px",
+                        "container-padding": "2rem"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .neu-extruded {
+            box-shadow: -8px -8px 16px #FFFFFF, 8px 8px 16px #d8dade;
+        }
+        .neu-recessed {
+            box-shadow: inset -6px -6px 12px #FFFFFF, inset 6px 6px 12px #d8dade;
+        }
+        .neu-interactive:active {
+            box-shadow: inset -4px -4px 8px #FFFFFF, inset 4px 4px 8px #d8dade;
+            transform: scale(0.98);
+        }
+        /* Custom Toggle Switch for Neumorphism */
+        .neu-toggle-input:checked + .neu-toggle-bg {
+            background-color: #d5e3ff; /* primary-fixed */
+        }
+        .neu-toggle-input:checked + .neu-toggle-bg .neu-toggle-knob {
+            transform: translateX(100%);
+            background-color: #305f9f; /* primary */
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<!-- SideNavBar -->
+<nav class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container dark:bg-surface-container border-r border-outline-variant/10 shadow-sm flex flex-col py-margin-lg hidden md:flex z-50">
+<div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">LensAgent</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">v1.0.4-stable</p>
+</div>
+</div>
+<ul class="flex-1 flex flex-col gap-2 px-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-lg mx-2 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-body-md text-body-md">Agent</span>
+</a>
+</li>
+<li>
+<!-- Active State -->
+<a class="flex items-center gap-3 px-4 py-3 text-primary bg-primary/10 border-l-4 border-primary rounded-r-lg mx-2 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-body-md text-body-md font-bold">Settings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-lg mx-2 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-body-md text-body-md">History</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-lg mx-2 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+<span class="font-body-md text-body-md">Vault</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-sidebar-width h-20 bg-surface/80 backdrop-blur-md flex items-center justify-between px-container-padding z-40">
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">System Settings</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="neu-recessed bg-surface rounded-full flex items-center px-4 py-2 w-64">
+<span class="material-symbols-outlined text-outline mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-body-md p-0" placeholder="Search settings..." type="text"/>
+</div>
+<button class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+</button>
+<button class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center text-on-surface-variant hover:text-primary cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-sidebar-width pt-28 pb-20 px-margin-desktop min-h-screen flex flex-col gap-10" id="tab-settings">
+<div class="max-w-4xl mx-auto w-full">
+<div class="neu-extruded bg-surface rounded-2xl p-10 mb-10">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-8 border-b border-outline-variant/30 pb-4">Connection Parameters</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+<!-- Server URL -->
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-label-md text-on-surface-variant font-bold ml-1" for="setting-serverUrl">Server URL</label>
+<div class="neu-recessed bg-surface rounded-xl px-5 py-3.5">
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-primary p-0 outline-none placeholder:text-outline" id="setting-serverUrl" type="url" value="https://api.lensagent.local/v1"/>
+</div>
+</div>
+<!-- Max Steps -->
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-label-md text-on-surface-variant font-bold ml-1" for="setting-maxSteps">Max Execution Steps</label>
+<div class="neu-recessed bg-surface rounded-xl px-5 py-3.5">
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-primary p-0 outline-none placeholder:text-outline" id="setting-maxSteps" type="number" value="150"/>
+</div>
+</div>
+<!-- Timeout -->
+<div class="flex flex-col gap-3">
+<label class="font-label-md text-label-md text-on-surface-variant font-bold ml-1" for="setting-timeout">Timeout (ms)</label>
+<div class="neu-recessed bg-surface rounded-xl px-5 py-3.5">
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md text-primary p-0 outline-none placeholder:text-outline" id="setting-timeout" type="number" value="30000"/>
+</div>
+</div>
+</div>
+</div>
+<div class="neu-extruded bg-surface rounded-2xl p-10 mb-10">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-8 border-b border-outline-variant/30 pb-4">Agent Behaviors</h3>
+<div class="flex flex-col gap-8">
+<!-- Jitter Toggle -->
+<div class="flex items-center justify-between gap-6">
+<div class="flex-1">
+<p class="font-body-lg text-body-lg text-on-surface font-bold">Enable Request Jitter</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 leading-relaxed">Adds randomized micro-delays to outgoing network calls to avoid rate limiting.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer neu-toggle-input" id="setting-jitter" type="checkbox"/>
+<div class="w-16 h-9 bg-surface-container-high rounded-full neu-recessed neu-toggle-bg transition-colors duration-300 flex items-center p-1.5">
+<div class="w-6 h-6 bg-surface rounded-full neu-extruded neu-toggle-knob transition-transform duration-300 flex items-center justify-center"></div>
+</div>
+</label>
+</div>
+<!-- Delta Toggle -->
+<div class="flex items-center justify-between gap-6">
+<div class="flex-1">
+<p class="font-body-lg text-body-lg text-on-surface font-bold">Delta Synchronization</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 leading-relaxed">Only sync changed nodes rather than pulling the full state tree on every heartbeat.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input class="sr-only peer neu-toggle-input" id="setting-delta" type="checkbox"/>
+<div class="w-16 h-9 bg-surface-container-high rounded-full neu-recessed neu-toggle-bg transition-colors duration-300 flex items-center p-1.5">
+<div class="w-6 h-6 bg-surface rounded-full neu-extruded neu-toggle-knob transition-transform duration-300 flex items-center justify-center"></div>
+</div>
+</label>
+</div>
+<!-- Live Audit Toggle -->
+<div class="flex items-center justify-between gap-6">
+<div class="flex-1">
+<p class="font-body-lg text-body-lg text-on-surface font-bold">Live Audit Logging</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 leading-relaxed">Stream real-time decision matrices to the terminal output.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer neu-toggle-input" id="setting-liveAudit" type="checkbox"/>
+<div class="w-16 h-9 bg-surface-container-high rounded-full neu-recessed neu-toggle-bg transition-colors duration-300 flex items-center p-1.5">
+<div class="w-6 h-6 bg-surface rounded-full neu-extruded neu-toggle-knob transition-transform duration-300 flex items-center justify-center"></div>
+</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex justify-end gap-6 mt-6">
+<button class="px-8 py-3.5 rounded-full neu-extruded bg-surface text-on-surface font-body-lg text-body-lg font-bold neu-interactive transition-all hover:text-primary" id="resetSettingsBtn">
+                    Reset
+                </button>
+<button class="px-8 py-3.5 rounded-full neu-extruded bg-surface text-primary font-body-lg text-body-lg font-bold neu-interactive transition-all hover:brightness-95" id="saveSettingsBtn">
+                    Save Changes
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="fixed bottom-0 right-0 left-sidebar-width h-10 bg-surface-container-lowest border-t border-outline-variant/10 flex items-center justify-between px-container-padding w-full z-40">
+<span class="font-label-mono text-label-md text-on-surface-variant">System Health: Optimal | LensAgent CLI v1.0.4</span>
+<div class="flex gap-6">
+<a class="font-label-mono text-label-md text-on-secondary-fixed-variant hover:text-primary opacity-80 hover:opacity-100 transition-opacity" href="#">Docs</a>
+<a class="font-label-mono text-label-md text-on-secondary-fixed-variant hover:text-primary opacity-80 hover:opacity-100 transition-opacity" href="#">Logs</a>
+<a class="font-label-mono text-label-md text-on-secondary-fixed-variant hover:text-primary opacity-80 hover:opacity-100 transition-opacity" href="#">Terminal</a>
+</div>
+</footer>
+</body></html>
+
+<!-- LensAgent Session History (Refined Neumorphic) -->
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LensAgent - Session History</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#794225",
+                        "surface-container-highest": "#e0e2e6",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#424750",
+                        "inverse-on-surface": "#eff1f5",
+                        "tertiary-fixed-dim": "#99d595",
+                        "surface-container-low": "#f2f4f8",
+                        "background": "#f7f9fd",
+                        "tertiary-container": "#86c182",
+                        "surface": "#f7f9fd",
+                        "secondary": "#895032",
+                        "on-secondary-fixed": "#341100",
+                        "inverse-primary": "#a8c8ff",
+                        "outline-variant": "#c3c6d2",
+                        "on-primary-container": "#094583",
+                        "secondary-container": "#feb28d",
+                        "on-secondary-fixed-variant": "#6d391d",
+                        "tertiary": "#336a35",
+                        "primary-fixed-dim": "#a8c8ff",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ec",
+                        "surface-bright": "#f7f9fd",
+                        "primary-fixed": "#d5e3ff",
+                        "secondary-fixed-dim": "#ffb692",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#19511f",
+                        "on-tertiary-fixed": "#002205",
+                        "on-surface": "#191c1f",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#0e4685",
+                        "primary-container": "#89b4fa",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#174f1e",
+                        "inverse-surface": "#2d3134",
+                        "surface-tint": "#305f9f",
+                        "secondary-fixed": "#ffdbcb",
+                        "on-primary-fixed": "#001b3c",
+                        "outline": "#737781",
+                        "surface-dim": "#d8dade",
+                        "surface-container": "#eceef2",
+                        "surface-variant": "#e0e2e6",
+                        "tertiary-fixed": "#b4f2af",
+                        "error": "#ba1a1a",
+                        "on-background": "#191c1f",
+                        "primary": "#305f9f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "margin-mobile": "20px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "gutter": "16px",
+                        "base": "8px",
+                        "lg": "40px",
+                        "xs": "4px",
+                        "sidebar-width": "280px",
+                        "container-padding": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "label-mono": ["monospace"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "26px", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["22px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "label-mono": ["11px", { "lineHeight": "14px", "letterSpacing": "0.1em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .neumorphic-extruded {
+            box-shadow: -6px -6px 12px #FFFFFF, 6px 6px 12px #D1D9E6;
+        }
+        .neumorphic-recessed {
+            box-shadow: inset -6px -6px 12px #FFFFFF, inset 6px 6px 12px #D1D9E6;
+        }
+        .neumorphic-btn-primary {
+            background: linear-gradient(145deg, #a8c8ff, #89b4fa);
+            box-shadow: -4px -4px 10px #FFFFFF, 4px 4px 10px #D1D9E6;
+        }
+        .neumorphic-btn-primary:active {
+            box-shadow: inset -4px -4px 10px #89b4fa, inset 4px 4px 10px #305f9f;
+        }
+        .neumorphic-btn-secondary {
+            background: #f7f9fd;
+            box-shadow: -4px -4px 10px #FFFFFF, 4px 4px 10px #D1D9E6;
+            transition: all 0.2s ease-in-out;
+        }
+        .neumorphic-btn-secondary:active {
+            box-shadow: inset -4px -4px 10px #FFFFFF, inset 4px 4px 10px #D1D9E6;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-full flex font-body-md overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNav (Shared Component) -->
+<nav class="hidden md:flex flex-col bg-surface-container w-sidebar-width h-screen fixed left-0 top-0 border-r border-outline-variant/10 shadow-sm py-margin-lg z-20">
+<!-- Brand Header -->
+<div class="px-container-padding mb-md flex items-center gap-3">
+<div class="w-10 h-10 rounded-full neumorphic-extruded flex items-center justify-center bg-surface">
+<span class="material-symbols-outlined text-primary" data-icon="lens">lens</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">LensAgent</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">v1.0.4-stable</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-2 px-sm mt-md">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-body-md text-body-md">Agent</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary bg-surface border-l-4 border-primary neumorphic-extruded active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-body-md text-body-md font-bold">History</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+<span class="font-body-md text-body-md">Vault</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<div class="flex-1 flex flex-col md:ml-sidebar-width h-screen bg-surface">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 right-0 left-0 md:left-sidebar-width h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-container-padding z-10 border-b border-outline-variant/10">
+<div class="md:hidden font-headline-md text-headline-md font-bold text-on-surface">LensAgent</div>
+<div class="hidden md:flex font-headline-md text-headline-md font-bold text-on-surface">History</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full neumorphic-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+</button>
+<button class="w-10 h-10 rounded-full neumorphic-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="w-10 h-10 rounded-full neumorphic-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+</button>
+</div>
+</header>
+<!-- Main Workspace -->
+<main class="flex-1 overflow-y-auto pt-24 pb-20 px-margin-mobile md:px-margin-desktop" id="tab-history">
+<!-- Header & Action Area -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Session History</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Review past agent interactions and exported vaults.</p>
+</div>
+<button class="flex items-center gap-2 px-6 py-3 rounded-full neumorphic-btn-secondary text-error font-label-md text-label-md" id="clearHistoryBtn">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                    Clear History
+                </button>
+</div>
+<!-- Neumorphic Recessed Container for History List -->
+<div class="w-full min-h-[500px] rounded-[3rem] neumorphic-recessed p-8 md:p-12 flex flex-col relative overflow-hidden bg-surface-container-low">
+<!-- Dynamic Injection Container -->
+<div class="flex flex-col gap-4 w-full h-full z-10 relative flex-1" id="historyList">
+<!-- Empty State (Default Visible) -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center p-md opacity-100 transition-opacity duration-300" id="emptyState">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-3">No Session History</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto mb-8">Your past agent interactions will appear here. Start a new session to begin recording history.</p>
+<button class="px-8 py-3.5 rounded-full neumorphic-btn-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+                            Start New Session
+                        </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="fixed bottom-0 right-0 left-0 md:left-sidebar-width h-8 bg-surface-container-lowest border-t border-outline-variant/10 flex items-center justify-between px-container-padding z-10 w-full">
+<div class="font-label-mono text-label-mono text-on-surface-variant">System Health: Optimal | LensAgent CLI v1.0.4</div>
+<div class="flex gap-4">
+<a class="font-label-mono text-label-mono text-on-secondary-fixed-variant hover:text-primary opacity-80 hover:opacity-100 transition-opacity" href="#">Docs</a>
+<a class="font-label-mono text-label-mono text-on-secondary-fixed-variant hover:text-primary opacity-80 hover:opacity-100 transition-opacity" href="#">Logs</a>
+<a class="font-label-mono text-label-mono text-on-secondary-fixed-variant hover:text-primary opacity-80 hover:opacity-100 transition-opacity" href="#">Terminal</a>
+</div>
+</footer>
+</div>
+<!-- Mobile Bottom NavBar (Visible only on md:hidden) -->
+<div class="md:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-lowest border-t border-outline-variant/10 flex items-center justify-around px-2 z-20 neumorphic-extruded pb-safe">
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-primary bg-primary-container/20 rounded-full w-12 h-12 justify-center neumorphic-recessed" href="#">
+<span class="material-symbols-outlined" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</div>
+<script>
+        // Simple JS to demonstrate empty state clearing
+        document.getElementById('clearHistoryBtn').addEventListener('click', function() {
+            const list = document.getElementById('historyList');
+            const emptyState = document.getElementById('emptyState');
+            
+            // In a real app, you'd clear items here. For demo, we just ensure empty state is visible and do a quick animation.
+            emptyState.style.opacity = '0';
+            setTimeout(() => {
+                // Clear any mock items if they existed
+                Array.from(list.children).forEach(child => {
+                    if(child.id !== 'emptyState') child.remove();
+                });
+                emptyState.style.opacity = '1';
+            }, 300);
+        });
+    </script>
+</body></html>
+
+<!-- LensAgent Secure Vault (Refined Neumorphic) -->
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LensAgent Secure Vault</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#794225",
+                    "surface-container-highest": "#e0e2e6",
+                    "on-error": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "on-surface-variant": "#424750",
+                    "inverse-on-surface": "#eff1f5",
+                    "tertiary-fixed-dim": "#99d595",
+                    "surface-container-low": "#f2f4f8",
+                    "background": "#f7f9fd",
+                    "tertiary-container": "#86c182",
+                    "surface": "#f7f9fd",
+                    "secondary": "#895032",
+                    "on-secondary-fixed": "#341100",
+                    "inverse-primary": "#a8c8ff",
+                    "outline-variant": "#c3c6d2",
+                    "on-primary-container": "#094583",
+                    "secondary-container": "#feb28d",
+                    "on-secondary-fixed-variant": "#6d391d",
+                    "tertiary": "#336a35",
+                    "primary-fixed-dim": "#a8c8ff",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e6e8ec",
+                    "surface-bright": "#f7f9fd",
+                    "primary-fixed": "#d5e3ff",
+                    "secondary-fixed-dim": "#ffb692",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#19511f",
+                    "on-tertiary-fixed": "#002205",
+                    "on-surface": "#191c1f",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#0e4685",
+                    "primary-container": "#89b4fa",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-container": "#174f1e",
+                    "inverse-surface": "#2d3134",
+                    "surface-tint": "#305f9f",
+                    "secondary-fixed": "#ffdbcb",
+                    "on-primary-fixed": "#001b3c",
+                    "outline": "#737781",
+                    "surface-dim": "#d8dade",
+                    "surface-container": "#eceef2",
+                    "surface-variant": "#e0e2e6",
+                    "tertiary-fixed": "#b4f2af",
+                    "error": "#ba1a1a",
+                    "on-background": "#191c1f",
+                    "primary": "#305f9f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "margin-mobile": "20px",
+                    "sm": "12px",
+                    "md": "24px",
+                    "gutter": "16px",
+                    "base": "8px",
+                    "lg": "40px",
+                    "xs": "4px",
+                    "sidebar-width": "280px",
+                    "container-padding": "32px"
+            },
+            "fontFamily": {
+                    "headline-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-lg-mobile": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-mono": [
+                            "Courier New", "monospace"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg": [
+                            "28px",
+                            {
+                                    "lineHeight": "36px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "26px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "22px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-md": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-mono": [
+                            "11px",
+                            {
+                                    "lineHeight": "14px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .neo-extruded {
+            box-shadow: -6px -6px 12px #FFFFFF, 6px 6px 12px #D1D9E6;
+        }
+        .neo-recessed {
+            box-shadow: inset -6px -6px 12px #FFFFFF, inset 6px 6px 12px #D1D9E6;
+        }
+        .neo-button-ext {
+            box-shadow: -4px -4px 8px #FFFFFF, 4px 4px 8px #D1D9E6;
+            transition: all 0.2s ease;
+        }
+        .neo-button-ext:active {
+            box-shadow: inset -4px -4px 8px #FFFFFF, inset 4px 4px 8px #D1D9E6;
+            transform: scale(0.98);
+        }
+        .neo-button-primary {
+            box-shadow: -4px -4px 8px rgba(255,255,255,0.1), 4px 4px 8px rgba(15, 30, 50, 0.2);
+            transition: all 0.2s ease;
+        }
+        .neo-button-primary:active {
+            box-shadow: inset -4px -4px 8px rgba(15, 30, 50, 0.3), inset 4px 4px 8px rgba(15, 30, 50, 0.4);
+            transform: scale(0.98);
+        }
+        .neo-card {
+            box-shadow: -8px -8px 16px #FFFFFF, 8px 8px 16px #D1D9E6;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-full flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container border-r border-outline-variant/10 shadow-sm hidden md:flex flex-col py-lg z-20">
+<div class="px-md mb-lg">
+<h1 class="font-headline-md text-headline-md font-bold text-primary flex items-center gap-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+                LensAgent
+            </h1>
+<p class="font-label-md text-label-md text-on-surface-variant mt-xs">v1.0.4-stable</p>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-DEFAULT active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-body-md text-body-md">Agent</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-DEFAULT active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 rounded-DEFAULT active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-body-md text-body-md">History</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary bg-primary/10 border-l-4 border-primary rounded-DEFAULT hover:bg-surface-container-high transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="font-body-md text-body-md font-bold">Vault</span>
+</a>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 md:left-sidebar-width h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-container-padding z-10 hidden md:flex">
+<div class="font-headline-md text-headline-md font-bold text-on-surface">LensAgent Secure Vault</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/20 p-2 rounded-full cursor-pointer transition-all">sensors</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/20 p-2 rounded-full cursor-pointer transition-all">memory</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:bg-surface-variant/20 p-2 rounded-full cursor-pointer transition-all">speed</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 md:ml-sidebar-width mt-0 md:mt-16 mb-8 overflow-y-auto p-margin-mobile md:p-margin-desktop" id="tab-vault">
+<!-- Mobile Header (Fallback for md:hidden) -->
+<div class="md:hidden mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary flex items-center gap-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lock</span>
+                Vault
+            </h1>
+</div>
+<div class="max-w-4xl mx-auto">
+<!-- Vault Card -->
+<div class="bg-surface rounded-xl neo-card p-lg flex flex-col gap-lg">
+<div class="flex items-start justify-between border-b border-outline-variant/20 pb-md">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">encrypted</span>
+                            Environment Variables
+                        </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Securely store API keys and configuration secrets.</p>
+</div>
+</div>
+<!-- Vault Form -->
+<div class="neo-recessed rounded-lg p-md min-h-[200px] flex flex-col items-center justify-start relative">
+<form class="w-full flex flex-col gap-md" id="vaultForm">
+<div class="flex flex-col gap-xs w-full">
+<label class="font-label-md text-label-md text-on-surface-variant ml-2">OPENAI_API_KEY</label>
+<div class="relative flex items-center w-full">
+<span class="material-symbols-outlined absolute left-4 text-on-surface-variant">vpn_key</span>
+<input class="w-full neo-recessed bg-transparent border-none rounded-DEFAULT py-3 pl-12 pr-12 text-body-md font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:outline-none transition-shadow" readonly="" type="password" value="sk-1234567890abcdef"/>
+<button class="absolute right-3 p-1 text-on-surface-variant hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-xs w-full">
+<label class="font-label-md text-label-md text-on-surface-variant ml-2">ANTHROPIC_API_KEY</label>
+<div class="relative flex items-center w-full">
+<span class="material-symbols-outlined absolute left-4 text-on-surface-variant">vpn_key</span>
+<input class="w-full neo-recessed bg-transparent border-none rounded-DEFAULT py-3 pl-12 pr-12 text-body-md font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:outline-none transition-shadow" placeholder="Enter API Key..." type="password"/>
+</div>
+</div>
+<button class="self-start mt-sm flex items-center gap-xs font-label-md text-label-md text-primary hover:text-surface-tint transition-colors ml-2" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span> Add Variable
+</button>
+</form>
+</div>
+<!-- Actions & Messaging -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-md pt-md border-t border-outline-variant/10">
+<div class="font-body-md text-body-md text-primary opacity-0 transition-opacity duration-300 w-full text-center sm:text-left" id="vaultMsg">
+                        Changes saved successfully.
+                    </div>
+<div class="flex items-center justify-end gap-md w-full sm:w-auto">
+<button class="flex-1 sm:flex-none py-3 px-6 rounded-full font-label-md text-label-md text-on-surface bg-surface neo-button-ext flex items-center justify-center gap-xs hover:text-error transition-colors" id="clearVaultBtn">
+<span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                            Clear All
+                        </button>
+<button class="flex-1 sm:flex-none py-3 px-6 rounded-full font-label-md text-label-md text-on-primary bg-primary neo-button-primary flex items-center justify-center gap-xs" id="saveVaultBtn">
+<span class="material-symbols-outlined" style="font-size: 18px;">save</span>
+                            Save Vault
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="fixed bottom-0 right-0 left-0 md:left-sidebar-width h-8 bg-surface-container-lowest flex items-center justify-between px-container-padding z-10">
+<div class="font-label-mono text-label-mono text-on-surface-variant">System Health: Optimal | LensAgent CLI v1.0.4</div>
+<div class="flex items-center gap-md font-label-mono text-label-mono text-on-secondary-fixed-variant">
+<a class="opacity-80 hover:opacity-100 transition-opacity hover:text-primary" href="#">Docs</a>
+<a class="opacity-80 hover:opacity-100 transition-opacity hover:text-primary" href="#">Logs</a>
+<a class="opacity-80 hover:opacity-100 transition-opacity hover:text-primary" href="#">Terminal</a>
+</div>
+</footer>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-8 left-0 right-0 bg-surface-container border-t border-outline-variant/10 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] flex items-center justify-around py-sm z-20 pb-safe">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined">settings</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant p-2" href="#">
+<span class="material-symbols-outlined">history</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary bg-primary/10 rounded-full p-2 px-4" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">lock</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for demo
+        document.getElementById('saveVaultBtn').addEventListener('click', () => {
+            const msg = document.getElementById('vaultMsg');
+            msg.style.opacity = '1';
+            setTimeout(() => {
+                msg.style.opacity = '0';
+            }, 3000);
+        });
+    </script>
+</body></html> this is the new ui what do you think abt it
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-08-30T20:48:02+05:30.
+</ADDITIONAL_METADATA>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LensAgent Comprehensive PII Test Suite</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f3f4f6;
+      color: #1f2937;
+      margin: 0;
+      padding: 40px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 24px 32px;
+    }
+    header h1 { margin: 0; font-size: 24px; }
+    header p { margin: 8px 0 0; opacity: 0.8; font-size: 14px; }
+    
+    .section {
+      padding: 32px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .section:last-child { border-bottom: none; }
+    .section h2 { margin-top: 0; color: #111827; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    input:focus { outline: 2px solid #2563eb; border-color: transparent; }
+    
+    .avatar-wrapper { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; background: #e5e7eb; object-fit: cover; }
+    
+    .raw-text-box {
+      background: #fef2f2;
+      border: 1px dashed #f87171;
+      padding: 16px;
+      border-radius: 6px;
+      color: #991b1b;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .content-editable-box {
+      border: 1px solid #d1d5db;
+      padding: 12px;
+      border-radius: 6px;
+      min-height: 60px;
+      background: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LensAgent PII Test Suite</h1>
+      <p>Open your LensAgent extension and start the agent on this page to verify zero-leakage redaction.</p>
+    </header>
+
+    <!-- SECTION 1: Standard PII Inputs & Avatars -->
+    <div class="section">
+      <h2>1. User Profile (Avatars & Passwords)</h2>
+      <div class="avatar-wrapper">
+        <!-- Visual PII: Should be caught by WebGPU Vision Model and DOM class scanner -->
+        <img src="https://i.pravatar.cc/150?img=32" alt="Profile Photo" class="avatar profile-photo">
+        <div>
+          <strong>Jane Doe</strong><br>
+          <span style="color: #6b7280; font-size: 14px;">Senior Administrator</span>
+        </div>
+      </div>
+      
+      <div class="grid">
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" value="jane.doe.secure@example.com">
+        </div>
+        <div class="field">
+          <label>Phone Number</label>
+          <input type="tel" value="+91 9876543210">
+        </div>
+        <div class="field">
+          <label>Account Password</label>
+          <input type="password" value="SuperSecretPassword123!">
+        </div>
+        <div class="field">
+          <label>Reset PIN</label>
+          <input type="number" id="pin" value="8492">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Financial Data -->
+    <div class="section">
+      <h2>2. Financial & Payment Info</h2>
+      <div class="grid">
+        <div class="field">
+          <label>Credit Card Number</label>
+          <input type="text" autocomplete="cc-number" value="4111 2222 3333 4444">
+        </div>
+        <div class="field">
+          <label>CVV / CVC</label>
+          <input type="text" name="cvv" value="123">
+        </div>
+      </div>
+      <div class="field">
+        <label>Custom Payment Token (Using data-pii attribute)</label>
+        <input type="text" data-pii="true" value="tok_visa_482910484">
+      </div>
+    </div>
+
+    <!-- SECTION 3: Indian Government IDs (Inputs & Raw Text) -->
+    <div class="section">
+      <h2>3. Government IDs (PAN, Aadhaar)</h2>
+      <div class="grid">
+        <div class="field">
+          <label>Permanent Account Number (PAN)</label>
+          <input type="text" id="pan" value="ABCDE1234F">
+        </div>
+        <div class="field">
+          <label>Aadhaar Number</label>
+          <input type="text" name="aadhaar" value="2345 6789 0123">
+        </div>
+      </div>
+
+      <p style="font-size: 14px; font-weight: bold; margin-top: 24px;">Raw Text Node Redaction Test (No Input Boxes):</p>
+      <div class="raw-text-box">
+        The user's registered Aadhaar card number is <strong>8291 3849 1029</strong>.<br>
+        Tax identification PAN is recorded as <strong>BXYPR9281Z</strong>.<br>
+        Direct deposit phone link: +91 9998887776.
+      </div>
+    </div>
+
+    <!-- SECTION 4: Edge Cases & Dynamic Elements -->
+    <div class="section">
+      <h2>4. Dynamic & Edge Cases</h2>
+      <div class="field">
+        <label>ContentEditable Div (Chat/Notes)</label>
+        <div class="content-editable-box" contenteditable="true">
+          Patient notes: Please update the SSN to 999-88-7777 and ensure the contact email is updated to private.health@example.com.
+        </div>
+      </div>
+      
+      <div class="field">
+        <label>Generic Div with "sensitive" class</label>
+        <div class="sensitive" style="padding: 10px; background: #fef3c7; border-radius: 6px;">
+          This entire yellow box should be redacted because it has the class "sensitive".
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <!-- Dummy QR Code image to test vision model -->
+        <label>Account QR Code</label><br>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=ConfidentialData123" alt="QR Code" class="qr-code">
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -16,7 +16,8 @@
     Member 2 (WebGPU Vision) and Member 3 (Privacy Engine).
   -->
   <canvas id="inferenceCanvas" width="1280" height="720" style="display:none;"></canvas>
-  <script type="module" src="../dist/offscreen.bundle.js"></script>
+  <!-- Use raw ONNX Runtime Web instead of teammate's buggy Transformers.js bundle -->
+  <script src="../lib/ort/ort.min.js"></script>
   <script type="module" src="offscreen.js"></script>
 </body>
 </html>

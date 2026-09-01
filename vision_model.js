@@ -1,39 +1,33 @@
 /**
  * vision_model.js - Member 1 Local Vision Model (WebGPU ONNX)
  * 
- * Runs on-device WebGPU Vision inference and formats predictions into customMlBoxes.
+ * Runs on-device WebGPU/WASM Vision inference natively using onnxruntime-web
+ * Completely offline using the local 12MB YOLO model.
  */
+
+let ortSession = null;
+
+function calculateIoU(b1, b2) {
+  const xLeft = Math.max(b1.xmin, b2.xmin);
+  const yTop = Math.max(b1.ymin, b2.ymin);
+  const xRight = Math.min(b1.xmax, b2.xmax);
+  const yBottom = Math.min(b1.ymax, b2.ymax);
+  if (xRight < xLeft || yBottom < yTop) return 0.0;
+  const intersection = (xRight - xLeft) * (yBottom - yTop);
+  const a1 = (b1.xmax - b1.xmin) * (b1.ymax - b1.ymin);
+  const a2 = (b2.xmax - b2.xmin) * (b2.ymax - b2.ymin);
+  return intersection / (a1 + a2 - intersection);
+}
 
 export class LocalVisionModel {
   constructor(options = {}) {
     this.threshold = options.threshold ?? 0.15;
-    this.classes = options.classes ?? [
-      'face',
-      'human face',
-      'profile photo',
-      'credit card',
-      'id card',
-      'driver license',
-      'qr code'
-    ];
   }
 
-  /**
-   * Transforms raw model bounding boxes to the team standard customMlBoxes schema
-   * @param {Array} rawDetections - Array of { box: {xmin, ymin, xmax, ymax}, label, score }
-   * @returns {Array<{id: string, category: string, boundingBox: {x: number, y: number, width: number, height: number}, redactionLabel: string}>}
-   */
   static formatDetections(rawDetections = []) {
     return rawDetections.map((det, index) => {
       const idx = index + 1;
-      const label = (det.label || 'OBJECT').toLowerCase();
-      
-      let category = 'VISUAL_PII';
-      if (label.includes('face') || label.includes('photo')) category = 'FACE_AVATAR';
-      else if (label.includes('card')) category = 'CREDIT_CARD';
-      else if (label.includes('id') || label.includes('license')) category = 'ID_DOCUMENT';
-      else if (label.includes('qr')) category = 'QR_CODE';
-
+      const category = 'VISUAL_PII'; // Generic visual PII label
       const x = Math.round(det.box.xmin);
       const y = Math.round(det.box.ymin);
       const width = Math.round(det.box.xmax - det.box.xmin);
@@ -48,34 +42,146 @@ export class LocalVisionModel {
     });
   }
 
-  /**
-   * Runs local WebGPU inference via Chrome Extension Offscreen worker
-   * @param {string} rawScreenshotBase64
-   * @returns {Promise<Array>} customMlBoxes
-   */
-  async detect(rawScreenshotBase64) {
-    const dataUrl = rawScreenshotBase64.startsWith('data:') 
-      ? rawScreenshotBase64 
-      : `data:image/jpeg;base64,${rawScreenshotBase64}`;
+  async initModel() {
+    if (!ortSession) {
+      if (typeof ort === 'undefined') {
+        throw new Error("ONNX Runtime Web (ort) is not loaded!");
+      }
+      ort.env.wasm.wasmPaths = chrome.runtime.getURL('lib/ort/');
+      
+      try {
+        // Try WebGPU first, fallback to WASM
+        ortSession = await ort.InferenceSession.create(chrome.runtime.getURL('models/yolo_pii_nano.onnx'), {
+          executionProviders: ['webgpu', 'wasm']
+        });
+        console.log("[LocalVisionModel] ONNX model loaded locally! Backend:", ortSession.executionProviders[0]);
+      } catch(e) {
+        console.warn("WebGPU failed, falling back to WASM", e);
+        ortSession = await ort.InferenceSession.create(chrome.runtime.getURL('models/yolo_pii_nano.onnx'), {
+          executionProviders: ['wasm']
+        });
+      }
+    }
+  }
 
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          type: 'PROXY_RUN_VISION_DETECTION',
-          dataUrl: dataUrl,
-          classes: this.classes,
-          threshold: this.threshold
-        },
-        (response) => {
-          if (chrome.runtime.lastError || !response || response.error) {
-            const errMsg = response?.error || chrome.runtime.lastError?.message || 'Unknown VisionModel Error';
-            console.error('[VisionModel Error]:', errMsg);
-            reject(new Error(errMsg));
-          } else {
-            resolve(response.customMlBoxes || []);
+  async detect(rawScreenshotBase64) {
+    try {
+      await this.initModel();
+
+      const dataUrl = rawScreenshotBase64.startsWith('data:') 
+        ? rawScreenshotBase64 
+        : `data:image/jpeg;base64,${rawScreenshotBase64}`;
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = dataUrl;
+      });
+
+      // YOLO typically uses 640x640
+      const INPUT_SIZE = 640;
+      const canvas = new OffscreenCanvas(INPUT_SIZE, INPUT_SIZE);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, INPUT_SIZE, INPUT_SIZE);
+      const imgData = ctx.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
+
+      // Preprocess image to float32 tensor [1, 3, 640, 640]
+      const float32Data = new Float32Array(3 * INPUT_SIZE * INPUT_SIZE);
+      for (let i = 0; i < INPUT_SIZE * INPUT_SIZE; i++) {
+        float32Data[i] = imgData.data[i * 4] / 255.0;                           // R
+        float32Data[INPUT_SIZE * INPUT_SIZE + i] = imgData.data[i * 4 + 1] / 255.0; // G
+        float32Data[2 * INPUT_SIZE * INPUT_SIZE + i] = imgData.data[i * 4 + 2] / 255.0; // B
+      }
+      const tensor = new ort.Tensor('float32', float32Data, [1, 3, INPUT_SIZE, INPUT_SIZE]);
+
+      // Run inference
+      const results = await ortSession.run({ images: tensor });
+      const outputName = ortSession.outputNames[0];
+      const output = results[outputName].data;
+      const dims = results[outputName].dims; // e.g. [1, 84, 8400] for YOLOv8 or [1, 8400, 85] for YOLOv5
+
+      let rawBoxes = [];
+      const rx = img.width / INPUT_SIZE;
+      const ry = img.height / INPUT_SIZE;
+
+      if (dims.length === 3 && dims[1] < dims[2]) {
+        // YOLOv8 Format: [1, num_features, num_anchors]
+        const num_features = dims[1];
+        const num_anchors = dims[2];
+        const num_classes = num_features - 4;
+
+        for (let i = 0; i < num_anchors; i++) {
+          let maxScore = 0;
+          for (let c = 0; c < num_classes; c++) {
+            const score = output[(4 + c) * num_anchors + i];
+            if (score > maxScore) maxScore = score;
+          }
+
+          if (maxScore > this.threshold) {
+            const xc = output[0 * num_anchors + i];
+            const yc = output[1 * num_anchors + i];
+            const w  = output[2 * num_anchors + i];
+            const h  = output[3 * num_anchors + i];
+
+            const xmin = (xc - w / 2) * rx;
+            const ymin = (yc - h / 2) * ry;
+            const xmax = (xc + w / 2) * rx;
+            const ymax = (yc + h / 2) * ry;
+
+            rawBoxes.push({ box: { xmin, ymin, xmax, ymax }, score: maxScore });
           }
         }
-      );
-    });
+      } else if (dims.length === 3 && dims[1] > dims[2]) {
+        // YOLOv5 Format: [1, num_anchors, num_features]
+        const num_anchors = dims[1];
+        const num_features = dims[2];
+        const num_classes = num_features - 5;
+
+        for (let i = 0; i < num_anchors; i++) {
+          const objConf = output[i * num_features + 4];
+          if (objConf < this.threshold) continue;
+          
+          let maxScore = 0;
+          for (let c = 0; c < num_classes; c++) {
+            const score = output[i * num_features + 5 + c] * objConf;
+            if (score > maxScore) maxScore = score;
+          }
+
+          if (maxScore > this.threshold) {
+            const xc = output[i * num_features + 0];
+            const yc = output[i * num_features + 1];
+            const w  = output[i * num_features + 2];
+            const h  = output[i * num_features + 3];
+
+            const xmin = (xc - w / 2) * rx;
+            const ymin = (yc - h / 2) * ry;
+            const xmax = (xc + w / 2) * rx;
+            const ymax = (yc + h / 2) * ry;
+
+            rawBoxes.push({ box: { xmin, ymin, xmax, ymax }, score: maxScore });
+          }
+        }
+      }
+
+      // NMS
+      rawBoxes.sort((a, b) => b.score - a.score);
+      const nmsBoxes = [];
+      for (const b of rawBoxes) {
+        let keep = true;
+        for (const keepB of nmsBoxes) {
+          if (calculateIoU(b.box, keepB.box) > 0.45) {
+            keep = false;
+            break;
+          }
+        }
+        if (keep) nmsBoxes.push(b);
+      }
+
+      return LocalVisionModel.formatDetections(nmsBoxes);
+    } catch (err) {
+      console.error('[VisionModel Error]:', err);
+      throw err;
+    }
   }
 }

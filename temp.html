@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LensAgent Guard</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- SIDEBAR (Fixed Width) -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-box">
+        <span class="material-symbols-outlined logo-icon">security</span>
+      </div>
+      <div>
+        <h2>LensAgent</h2>
+        <p>TERMINAL</p>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-tab="main">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+        Agent
+      </button>
+      <button class="nav-btn" data-tab="settings">
+        <span class="material-symbols-outlined">settings</span>
+        Settings
+      </button>
+      <button class="nav-btn" data-tab="history">
+        <span class="material-symbols-outlined">history</span>
+        History
+      </button>
+      <button class="nav-btn" data-tab="vault">
+        <span class="material-symbols-outlined">lock</span>
+        Vault
+      </button>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="main-wrapper">
+    <!-- Atmospheric Glow -->
+    <div class="glow-orb"></div>
+
+    <!-- HEADER -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <!-- Status indicator (e.g. Good/Poor) can go here if needed -->
+      </div>
+      <div class="topbar-right">
+        <button id="btnPopout" class="icon-btn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-right:12px;" title="Open Dashboard in Full Tab">
+          <span class="material-symbols-outlined" style="font-size:16px;">open_in_new</span>
+        </button>
+        <span id="connectionBadge" class="conn-badge">OFFLINE</span>
+        <span id="stateLabel" class="state-label">IDLE</span>
+      </div>
+    </header>
+
+    <main class="content-scroll">
+      
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: MAIN                                                          -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-main" class="tab-content active">
+        <!-- Page Context Header -->
+        <div class="page-context">
+          <h1>
+            LensAgent
+            <span class="status-dot-wrapper">
+              <span class="dot-ping"></span>
+              <span class="dot-core" id="statusDot"></span>
+            </span>
+          </h1>
+          <div class="badge-row">
+            <span class="badge-green">RUNNING</span>
+            <span class="badge-slate">ACTIVE</span>
+          </div>
+        </div>
+
+        <!-- Glassmorphic Controls -->
+        <div class="glass-panel">
+          <label for="goalInput">AGENT OBJECTIVE</label>
+          <div class="control-row">
+            <div class="input-wrapper">
+              <span class="material-symbols-outlined input-icon">track_changes</span>
+              <input type="text" id="goalInput" placeholder="e.g. 'Search for train tickets to Mumbai on IRCTC'" spellcheck="false" autocomplete="off" />
+            </div>
+            <div class="btn-group">
+              <button id="stopBtn" class="btn-stop" disabled>
+                <span class="material-symbols-outlined text-sm">stop</span> Stop
+              </button>
+              <button id="startBtn" class="btn-start">
+                <span class="material-symbols-outlined text-sm">play_arrow</span> Start Agent
+              </button>
+            </div>
+          </div>
+          <p id="errorMsg" class="error-msg" hidden></p>
+        </div>
+
+        <!-- Live Security Audit (Bento Grid) -->
+        <div class="video-grid">
+          <!-- Raw Viewport -->
+          <div class="video-panel" data-stream="raw">
+            <div class="panel-overlay">
+              <span class="panel-title"><span class="material-symbols-outlined text-sm">visibility</span> Raw Viewport</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="live-tag"><span class="pulse-dot-red"></span> LIVE</span>
+                <button class="expand-btn" data-target="raw" title="Expand to fullscreen">
+                  <span class="material-symbols-outlined">fullscreen</span>
+                </button>
+              </div>
+            </div>
+            <canvas id="rawCanvas" width="640" height="360"></canvas>
+            <div class="scan-grid"></div>
+          </div>
+          
+          <!-- Sanitized Stream -->
+          <div class="video-panel safe-panel" data-stream="sanitized">
+            <div class="panel-overlay">
+              <span class="panel-title text-green"><span class="material-symbols-outlined text-sm">shield_locked</span> Sanitized Stream</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="live-tag text-green"><span class="material-symbols-outlined text-sm pulse-icon">lock</span> SECURE</span>
+                <button class="expand-btn" data-target="sanitized" title="Expand to fullscreen">
+                  <span class="material-symbols-outlined">fullscreen</span>
+                </button>
+              </div>
+            </div>
+            <canvas id="redactedCanvas" width="640" height="360"></canvas>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <!-- Metrics Bento Bar -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span>REDACTIONS</span>
+            <strong id="redactionCount">0</strong>
+          </div>
+          <div class="metric-card">
+            <span>LATENCY</span>
+            <strong><span id="latencyDisplay">—</span></strong>
+          </div>
+          <div class="metric-card">
+            <span>FPS</span>
+            <strong id="fpsDisplay">—</strong>
+          </div>
+          <div class="metric-card">
+            <span>FRAMES</span>
+            <strong id="frameCount">0</strong>
+          </div>
+          <div class="metric-card">
+            <span>Δ-SKIPPED</span>
+            <strong id="skippedCount">0</strong>
+          </div>
+          <div class="metric-card quality-card">
+            <div class="glow-bg"></div>
+            <span>QUALITY</span>
+            <strong><span id="qualityDisplay">—</span></strong>
+          </div>
+        </div>
+
+        <!-- Latency Sparkline (Hidden or placed here) -->
+        <div class="sparkline-wrapper" style="display: none;">
+           <canvas id="sparklineCanvas" width="660" height="40"></canvas>
+        </div>
+
+        <!-- Terminal Log -->
+        <div class="terminal-card">
+          <div class="terminal-header">
+            <span>
+              <span class="material-symbols-outlined text-sm">terminal</span> Action Log
+              <span class="step-counter" style="margin-left: 10px; font-weight: bold; color: #0EA5E9;">Step <b id="stepCount">0</b>/<b id="maxSteps">30</b></span>
+            </span>
+            <button id="exportLogBtn">Export</button>
+          </div>
+          <div id="actionLog" class="terminal-body">
+            <div class="log-info">Waiting for agent to start...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: SETTINGS                                                      -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-settings" class="tab-content" style="display: none;">
+        <div class="page-context">
+          <h1>Settings</h1>
+          <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">Configure LensAgent core security and system parameters</p>
+        </div>
+        
+        <div class="settings-form glass-panel" style="margin-top: 20px;">
+          <div class="setting-group">
+            <label>Backend Server URL</label>
+            <input type="text" id="settBackendUrl" class="setting-input" />
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Max Steps</label>
+              <input type="number" id="settMaxSteps" class="setting-input" min="5" max="100" />
+            </div>
+            <div class="setting-group half">
+              <label>Capture Quality</label>
+              <input type="number" id="settCaptureQuality" class="setting-input" min="30" max="100" />
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label>Server Timeout (ms)</label>
+              <input type="number" id="settServerTimeout" class="setting-input" min="2000" max="30000" step="1000" />
+            </div>
+            <div class="setting-group half">
+              <label>Stabilize Delay (ms)</label>
+              <input type="number" id="settStabilizeDelay" class="setting-input" min="50" max="2000" step="50" />
+            </div>
+          </div>
+          <div class="setting-group mt-4">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settHumanize" /> Human-like input synthesis (jitter + delays)
+            </label>
+          </div>
+          <div class="setting-group mt-2">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settDeltaFrames" /> Delta-frame detection (skip unchanged frames)
+            </label>
+          </div>
+          <div class="setting-group mt-2">
+            <label class="checkbox-label">
+              <input type="checkbox" id="settAuditStream" /> Live audit stream to popup
+            </label>
+          </div>
+          <div class="setting-actions">
+            <button id="saveSettingsBtn" class="btn-start" style="padding: 10px 20px;">Save Settings</button>
+            <button id="resetSettingsBtn" class="btn-stop" style="padding: 10px 20px;">Reset Defaults</button>
+          </div>
+          <p id="settingsMsg" class="settings-msg" hidden></p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: HISTORY                                                       -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-history" class="tab-content" style="display: none;">
+        <div class="page-context" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h1>Session History</h1>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Previous agent sessions and their outcomes</p>
+          </div>
+          <button id="clearHistoryBtn" class="btn-stop" style="padding: 6px 16px;">Clear</button>
+        </div>
+        
+        <div id="historyList" class="history-list" style="margin-top: 16px;">
+          <div class="history-empty">
+            <span class="material-symbols-outlined">inbox</span>
+            No past sessions yet. Start your first agent task.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: VAULT                                                         -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <section id="tab-vault" class="tab-content" style="display: none;">
+        <div class="page-context">
+          <h1>Identity Vault</h1>
+          <p style="color: #94A3B8; font-size: 14px; margin-top: 4px;">Securely store details for the agent to use when filling forms</p>
+        </div>
+
+        <div class="vault-status">
+          <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+          <span>Your vault is stored locally. <span id="vaultFilledCount" class="vault-count">0</span> fields configured.</span>
+        </div>
+
+        <div class="settings-form glass-panel">
+          <!-- Name Group: Full Name only (no redundant first/last split) -->
+          <div class="setting-group">
+            <label for="vault_full_name">Full Name</label>
+            <div class="vault-field-row">
+              <input type="text" id="vault_full_name" class="setting-input" placeholder="John Doe" autocomplete="name" />
+              <button class="vault-delete-btn" id="vaultDel_full_name" type="button" aria-label="Clear Full Name"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+            </div>
+          </div>
+
+          <!-- Contact Information - 2 columns -->
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label for="vault_email">Email</label>
+              <div class="vault-field-row">
+                <input type="email" id="vault_email" class="setting-input" placeholder="john@example.com" autocomplete="email" />
+                <button class="vault-delete-btn" id="vaultDel_email" type="button" aria-label="Clear Email"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label for="vault_phone">Phone</label>
+              <div class="vault-field-row">
+                <input type="tel" id="vault_phone" class="setting-input" placeholder="+91 98765 43210" autocomplete="tel" />
+                <button class="vault-delete-btn" id="vaultDel_phone" type="button" aria-label="Clear Phone"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Address Information - 2 columns -->
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label for="vault_address">Address</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_address" class="setting-input" placeholder="123 Main Street" />
+                <button class="vault-delete-btn" id="vaultDel_address" type="button" aria-label="Clear Address"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label for="vault_city">City</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_city" class="setting-input" placeholder="Mumbai" />
+                <button class="vault-delete-btn" id="vaultDel_city" type="button" aria-label="Clear City"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label for="vault_state">State</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_state" class="setting-input" placeholder="Maharashtra" />
+                <button class="vault-delete-btn" id="vaultDel_state" type="button" aria-label="Clear State"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label for="vault_pincode">Pincode</label>
+              <div class="vault-field-row">
+                <input type="text" id="vault_pincode" class="setting-input" placeholder="400001" />
+                <button class="vault-delete-btn" id="vaultDel_pincode" type="button" aria-label="Clear Pincode"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Fields - 2 columns -->
+          <div class="setting-row">
+            <div class="setting-group half">
+              <label for="vault_dob">Date of Birth</label>
+              <div class="vault-field-row">
+                <input type="date" id="vault_dob" class="setting-input" />
+                <button class="vault-delete-btn" id="vaultDel_dob" type="button" aria-label="Clear DOB"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+            <div class="setting-group half">
+              <label for="vault_gender">Gender</label>
+              <div class="vault-field-row">
+                <select id="vault_gender" class="setting-input">
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+                <button class="vault-delete-btn" id="vaultDel_gender" type="button" aria-label="Clear Gender"><span class="material-symbols-outlined text-sm" aria-hidden="true">delete</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-actions mt-4">
+            <button id="saveVaultBtn" class="btn-start" type="button">Save Vault</button>
+            <button id="flushVaultBtn" class="btn-stop" type="button">Clear All</button>
+          </div>
+          <p id="vaultMsg" class="settings-msg" hidden role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footerbar">
+      <span>v5.1 • <span style="color: #0EA5E9;">System Active</span></span>
+      <span id="dprDisplay"></span>
+    </footer>
+  </div>
+
+  <!-- FULLSCREEN VIDEO MODAL -->
+  <div id="videoModal" class="video-modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+    <div class="video-modal-header">
+      <span id="modalTitle" class="panel-title"></span>
+      <button id="modalClose" class="modal-close-btn" title="Close (Esc)" aria-label="Close modal">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </div>
+    <p id="modalDesc" hidden>Full screen view of captured video feed</p>
+    <canvas id="modalCanvas" class="modal-canvas" aria-label="Captured video feed"></canvas>
+  </div>
+
+  <!-- HITL CHAT OVERLAY -->
+  <div id="hitlOverlay" class="hitl-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="hitlHeader">
+    <div class="hitl-card">
+      <div class="hitl-header" id="hitlHeader">
+        <span class="material-symbols-outlined" aria-hidden="true">chat</span>
+        <span>Agent needs your input</span>
+        <span class="hitl-pulse" aria-hidden="true"></span>
+      </div>
+      <p id="hitlQuestion" class="hitl-question" aria-live="polite">Loading...</p>
+      <div class="hitl-input-row">
+        <label for="hitlInput" class="visually-hidden">Your answer</label>
+        <input type="text" id="hitlInput" class="hitl-input" placeholder="Type your answer..." autocomplete="off" />
+        <button id="hitlSendBtn" class="btn-start hitl-send" type="button">Send</button>
+      </div>
+      <label class="checkbox-label hitl-save-label">
+        <input type="checkbox" id="hitlSaveToVault" checked />
+        Save to Vault for future use
+      </label>
+      <p id="hitlVaultKeyLabel" class="hitl-vault-key" hidden>Save as: <code id="hitlVaultKey"></code></p>
+    </div>
+  </div>
+
+  <!-- JIT ACTION APPROVAL MODAL -->
+  <div id="approvalOverlay" class="approval-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="approvalTitle">
+    <div class="approval-card">
+      <div class="approval-icon-row">
+        <span class="material-symbols-outlined approval-warn-icon" aria-hidden="true">warning</span>
+      </div>
+      <h3 id="approvalTitle" class="approval-title">Action Approval Required</h3>
+      <p id="approvalContext" class="approval-context">The agent wants to perform a sensitive action.</p>
+      <p id="approvalDetail" class="approval-detail"></p>
+      <div class="approval-btn-row">
+        <button id="approvalDenyBtn" class="btn-stop approval-btn">Deny</button>
+        <button id="approvalApproveBtn" class="btn-start approval-btn">Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

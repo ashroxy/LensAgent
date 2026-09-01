@@ -43,7 +43,15 @@
     "sandbox": "sandbox allow-scripts; script-src 'self' 'wasm-unsafe-eval'; connect-src 'none'; img-src 'self' data: blob:; object-src 'none'"
   },
 
-  
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "models/*",
+        "lib/ort/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
 
   "icons": {
     "16": "assets/icons/icon16.png",
