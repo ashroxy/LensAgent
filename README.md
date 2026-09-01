@@ -53,7 +53,7 @@ Build a privacy-preserving vision agent that runs in the browser. A local Vision
         v
 +-------------------------------------------------------+
 |              BACKEND VLM SERVER [Member 4]             |
-|  - FastAPI endpoint /api/v1/agent/act                  |
+|  - FastAPI endpoint /api/v1/infer                      |
 |  - VLM inference (Qwen2.5-VL / LLaMA-3.2-Vision)      |
 |  - Action planning + chain-of-thought reasoning        |
 |  - Returns ordered action list                         |
@@ -268,7 +268,7 @@ File: `offscreen/offscreen.js` → function `detectAndRedactPII(ctx, width, heig
 
 ## Server Communication Schema
 
-### Client → Server (POST /api/v1/agent/act)
+### Client → Server (POST /api/v1/infer)
 ```json
 {
   "goal": "Search for train tickets to Mumbai",
