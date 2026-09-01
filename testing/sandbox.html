@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LensAgent Sandbox (Full Integration Test)</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 20px; background: #0f172a; color: #f8fafc; margin: 0; }
+    h1, h2 { color: #38bdf8; }
+    .card { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155; }
+    button { background: #0284c7; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 10px; margin-top: 10px; }
+    button:hover { background: #0369a1; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+    input[type="file"] { display: block; margin-bottom: 10px; }
+    canvas, img { max-width: 100%; border: 1px dashed #475569; border-radius: 4px; margin-top: 10px; background: #000; }
+    pre { background: #000; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 12px; color: #a5f3fc; }
+    textarea { width: 100%; height: 80px; background: #0f172a; color: #fff; border: 1px solid #475569; border-radius: 4px; padding: 8px; font-family: monospace; margin-top: 10px;}
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🧪 LensAgent Architecture Sandbox</h1>
+  <p>Test the full pipeline: WebGPU Vision Model + PrivacyEngine + Payload Validator.</p>
+
+  <div class="card">
+    <h2>1. Visual Perception & Redaction</h2>
+    <p>Upload a screenshot (JPEG/PNG) to test the exact pipeline used in `agent-loop.js` and `offscreen.js`.</p>
+    <input type="file" id="image-upload" accept="image/*">
+    <div style="display:flex;">
+      <button id="btn-run-all" disabled>🚀 Run Full Pipeline (Detect + Sanitize)</button>
+    </div>
+    <div id="status-pipeline" style="margin-top: 10px; font-weight: bold;"></div>
+    
+    <div class="grid">
+      <div>
+        <h3>Original Image</h3>
+        <img id="img-original" style="display:none;">
+      </div>
+      <div>
+        <h3>Redacted Image Output</h3>
+        <img id="img-redacted" style="display:none;">
+      </div>
+    </div>
+    
+    <h3>Extracted Custom ML Boxes & Token Map</h3>
+    <pre id="pre-output">// Output will appear here...</pre>
+  </div>
+
+  <div class="card">
+    <h2>2. Payload Validation (Member 4 Edge Cases)</h2>
+    <p>Test the exact fail-closed validator that blocks API network transmission if PII escapes.</p>
+    <textarea id="txt-payload">
+{
+  "task": "Extract the PAN card number",
+  "browser_state": { "elements": ["Submit"] },
+  "execution_results": "Found PAN: ABCDE1234F on the page."
+}
+    </textarea>
+    <br>
+    <button id="btn-validate">🔍 Validate JSON Payload</button>
+    <div id="status-validation" style="margin-top: 10px; font-weight: bold;"></div>
+  </div>
+
+  <script type="module" src="sandbox.js"></script>
+</body>
+</html>
