@@ -54,7 +54,7 @@ export class LocalVisionModel {
    * @returns {Promise<Array>} customMlBoxes
    */
   async detect(rawScreenshotBase64) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
         {
           type: 'RUN_VISION_DETECTION',
@@ -64,8 +64,9 @@ export class LocalVisionModel {
         },
         (response) => {
           if (chrome.runtime.lastError || !response || response.error) {
-            console.error('[VisionModel Error]:', response?.error || chrome.runtime.lastError?.message);
-            resolve([]);
+            const errMsg = response?.error || chrome.runtime.lastError?.message || 'Unknown VisionModel Error';
+            console.error('[VisionModel Error]:', errMsg);
+            reject(new Error(errMsg));
           } else {
             resolve(response.customMlBoxes || []);
           }

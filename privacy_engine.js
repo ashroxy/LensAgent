@@ -166,8 +166,10 @@ export class PrivacyEngine {
    */
   validatePayload(payload) {
     if (!this.enableStrictZeroLeakage) return true;
+    if (payload == null) return true;
 
     const payloadString = (typeof payload === 'string') ? payload : JSON.stringify(payload);
+    if (!payloadString) return true;
 
     for (const [key, regex] of Object.entries(PrivacyEngine.PII_PATTERNS)) {
       const match = payloadString.match(regex);
