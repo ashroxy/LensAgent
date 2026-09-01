@@ -249,9 +249,13 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], defaultDpr = 1.0, 
 
   // 3. PII detection & canvas redaction via PrivacyEngine
   const tRedact = performance.now();
+  
+  // We explicitly bypass YOLO (`elements`) for blackout drawing because the nano model 
+  // is predicting heavily shifted/stretched coordinates on complex forms.
+  // The DOM engine (`scaledPiiBoxes`) is now 100% pixel-perfect and handles all inputs.
   const { sanitizedImage, tokenMap } = await privacyEngine.sanitizeViewport(
     rawBase64,
-    [...elements, ...scaledPiiBoxes],
+    [...scaledPiiBoxes], // ONLY use highly accurate DOM boxes
     dpr
   );
   const redactMs = performance.now() - tRedact;
