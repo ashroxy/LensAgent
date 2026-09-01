@@ -119,9 +119,9 @@ async function warmUpInference() {
   console.log("[Offscreen] Warm-up inference pass complete.");
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
 // MODEL CACHE (Cache API)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
 
 const MODEL_CACHE_NAME = "lensagent-models-v1";
 
@@ -167,9 +167,9 @@ function connectPort() {
     port.onMessage.addListener(async (msg) => {
       switch (msg.type) {
         case BG_PROCESS_FRAME: {
-          const { correlationId, rawBase64, buffer, piiBoxes, dpr } = msg;
+          const { correlationId, rawBase64, buffer, piiBoxes, dpr, viewportWidth } = msg;
           try {
-            const result = await processFrame(rawBase64, buffer, piiBoxes || [], dpr || 1.0);
+            const result = await processFrame(rawBase64, buffer, piiBoxes || [], dpr || 1.0, viewportWidth || null);
             if (port) port.postMessage({ type: OS_PERCEPTION_DONE, correlationId, result });
           } catch (err) {
             console.error("[Offscreen] Frame error:", err);
@@ -208,11 +208,21 @@ function reportGPUStatus() {
 // FRAME PROCESSING PIPELINE
 // =====================================================================================================================
 
-async function processFrame(rawBase64, buffer, piiBoxes = [], dpr = 1.0) {
+async function processFrame(rawBase64, buffer, piiBoxes = [], defaultDpr = 1.0, viewportWidth = null) {
   const t0 = performance.now();
   frameCount++;
 
-  // 1. Decode frame
+  // 1. Decode frame & verify true DPR scaling!
+  let dpr = defaultDpr;
+  if (viewportWidth) {
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = rawBase64.startsWith('data:') ? rawBase64 : `data:image/jpeg;base64,${rawBase64}`;
+    });
+    dpr = img.width / viewportWidth;
+  }
   const decodeMs = 0; // Handled internally by privacy engine
 
   // 2. Structural element detection via Member 1 WebGPU Model
