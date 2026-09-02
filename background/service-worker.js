@@ -403,10 +403,8 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
 
   } catch (err) {
     console.error("[SW] Start failed:", err);
-    if (activeCaptureEngine) {
-      await activeCaptureEngine.detach().catch(() => {});
-      activeCaptureEngine = null;
-    }
+    return { status: "ERROR", error: err.message || err.toString() };
+  //
     activeTabId = null;
     return { status: "ERROR", error: err.message };
   }
