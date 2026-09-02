@@ -366,8 +366,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
     // Wire detach recovery
     captureEngine.onDetach((reason) => {
       console.warn(`[SW] Debugger detached: ${reason}`);
-      activeCaptureEngine = null;
-      activeTabId = null;
+      activeCaptureEngines.delete(tab.id); if (activeTabId === tab.id) activeTabId = null;
       
 
       broadcastToPopup(BG_AGENT_STATUS, {
@@ -424,8 +423,7 @@ async function handleStopAgent(reason = "USER_STOPPED", tabId = null) {
       activeAgent = null;
     }
     if (activeCaptureEngine) {
-      await activeCaptureEngine.stopScreencast();
-      activeCaptureEngine = null;
+      await activeCaptureEngine.stopScreencast(); activeCaptureEngines.delete(tabId);
     }
     activeTabId = null;
     await storage.sessionSet({ agentState: AgentState.IDLE });

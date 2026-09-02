@@ -196,7 +196,7 @@ startBtn.addEventListener("click", async () => {
 
 stopBtn.addEventListener("click", async () => {
   stopBtn.disabled = true;
-  await msg({ type: POPUP_STOP_AGENT, targetTabId: currentPopupTabId });
+  await msg({ type: POPUP_STOP_AGENT, targetTabId: targetTabId || currentPopupTabId });
   resetToIdle();
   addLog("Agent stopped.", "warning");
 });
@@ -206,7 +206,7 @@ stopBtn.addEventListener("click", async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 exportLogBtn.addEventListener("click", async () => {
-  const resp = await msg({ type: POPUP_EXPORT_LOG, targetTabId: currentPopupTabId });
+  const resp = await msg({ type: POPUP_EXPORT_LOG, targetTabId: targetTabId || currentPopupTabId });
   if (resp?.text) {
     const blob = new Blob([resp.text], { type: "text/plain" });
     const url  = URL.createObjectURL(blob);
@@ -224,7 +224,8 @@ exportLogBtn.addEventListener("click", async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 chrome.runtime.onMessage.addListener((message) => {
-    if (message.payload && message.payload.activeTabId && currentPopupTabId && message.payload.activeTabId !== currentPopupTabId) {
+    const filterTabId = targetTabId || currentPopupTabId;
+    if (message.payload && message.payload.activeTabId && filterTabId && message.payload.activeTabId !== filterTabId) {
       return; // Ignore broadcasts from other tabs
     }
   switch (message.type) {
@@ -540,7 +541,7 @@ resetSettingsBtn.addEventListener("click", async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function loadHistoryUI() {
-  const history = await msg({ type: POPUP_GET_HISTORY, targetTabId: currentPopupTabId });
+  const history = await msg({ type: POPUP_GET_HISTORY, targetTabId: targetTabId || currentPopupTabId });
   historyList.innerHTML = "";
 
   if (!history || history.length === 0) {
@@ -587,7 +588,7 @@ function formatDuration(ms) {
 }
 
 clearHistoryBtn.addEventListener("click", async () => {
-  await msg({ type: POPUP_CLEAR_HISTORY, targetTabId: currentPopupTabId });
+  await msg({ type: POPUP_CLEAR_HISTORY, targetTabId: targetTabId || currentPopupTabId });
   historyList.innerHTML = `
     <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
 });
@@ -672,8 +673,9 @@ document.addEventListener("keydown", (e) => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 (async () => {
-  const status = await msg({ type: POPUP_GET_STATUS, targetTabId: currentPopupTabId });
-    if (status && status.activeTabId && currentPopupTabId && status.activeTabId !== currentPopupTabId && status.state !== AgentState.IDLE) {
+  const status = await msg({ type: POPUP_GET_STATUS, targetTabId: targetTabId || currentPopupTabId });
+    const filterTabId = targetTabId || currentPopupTabId;
+    if (status && status.activeTabId && filterTabId && status.activeTabId !== filterTabId && status.state !== AgentState.IDLE) {
       addLog("Agent is running on another tab. Please stop it first.", "warning");
       status.state = AgentState.IDLE;
     }
