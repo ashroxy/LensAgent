@@ -213,8 +213,15 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], defaultDpr = 1.0, 
   frameCount++;
 
   // 1. Decode frame & verify true DPR scaling using zero-copy ImageBitmap
-  const blob = new Blob([buffer], { type: 'image/jpeg' });
-  const imageBitmap = await createImageBitmap(blob);
+  let imageBitmap;
+  if (buffer) {
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
+    imageBitmap = await createImageBitmap(blob);
+  } else {
+    const res = await fetch(`data:image/jpeg;base64,${rawBase64}`);
+    const blob = await res.blob();
+    imageBitmap = await createImageBitmap(blob);
+  }
   const dpr = viewportWidth ? (imageBitmap.width / viewportWidth) : defaultDpr;
   const decodeMs = 0; // Handled internally by privacy engine
 
