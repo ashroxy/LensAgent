@@ -399,6 +399,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       stabilizeDelayMs: settings.stabilizeDelayMs,
       serverTimeoutMs:  settings.serverTimeoutMs,
       enableAuditStream: settings.enableAuditStream,
+      tabId: tab.id,
     });
 
     activeAgents.set(tab.id, activeAgent);
