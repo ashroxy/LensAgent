@@ -136,9 +136,7 @@ async function ensureOffscreenDocument() {
 
 async function handleOffscreenCrash() {
   console.warn("[SW] Offscreen document crashed. Attempting recovery...");
-  for (const agent of activeAgents.values()) { if (agent.state === AgentState.RUNNING) agent.pause(); } if (false) {
-    activeAgent.pause();
-  }
+  for (const agent of activeAgents.values()) { if (agent.state === AgentState.RUNNING) agent.pause(); } 
 
   // Attempt to recreate offscreen document
   try {
@@ -172,9 +170,7 @@ chrome.runtime.onConnect.addListener((port) => {
       offscreenPort = null;
       stopHeartbeat();
       console.warn("[SW] Offscreen channel disconnected.");
-      if (activeAgent && activeAgent.state === AgentState.RUNNING) {
-        activeAgent.pause();
-      }
+      for (const agent of activeAgents.values()) { if (agent.state === AgentState.RUNNING) agent.pause(); }
     });
   }
 });
@@ -291,9 +287,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 async function handleStartAgent(goal, settingsOverride = null, targetTabId = null) {
   try {
     // Multi-session prevention
-    if (activeAgent && activeAgent.state === AgentState.RUNNING) {
-      return { status: "ERROR", error: "An agent session is already running. Stop it first." };
-    }
+    
 
     if (!goal || typeof goal !== "string" || !goal.trim()) {
       return { status: "ERROR", error: "Goal cannot be empty." };
@@ -374,7 +368,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       console.warn(`[SW] Debugger detached: ${reason}`);
       activeCaptureEngine = null;
       activeTabId = null;
-      if (activeAgent) activeAgent.pause();
+      
 
       broadcastToPopup(BG_AGENT_STATUS, {
         state:   AgentState.PAUSED,
@@ -449,7 +443,7 @@ async function handleStopAgent(reason = "USER_STOPPED", tabId = null) {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function getAgentStatus() {
-  if (activeAgent) return { status: "OK", activeTabId, ...activeAgent.getStatus() };
+  if (activeAgent) return { status: "OK", activeTabId: tabId, ...activeAgent.getStatus() };
   
   return {
     status: "OK", state: AgentState.IDLE, goal: "", stepCount: 0,
