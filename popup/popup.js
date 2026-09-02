@@ -1,3 +1,8 @@
+let currentPopupTabId = null;
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  if (tabs.length > 0) currentPopupTabId = tabs[0].id;
+});
+
 /**
  * popup.js - LensAgent Popup Controller (Enhanced)
  * ===================================================
@@ -222,6 +227,9 @@ exportLogBtn.addEventListener("click", async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 chrome.runtime.onMessage.addListener((message) => {
+    if (message.payload && message.payload.activeTabId && currentPopupTabId && message.payload.activeTabId !== currentPopupTabId) {
+      return; // Ignore broadcasts from other tabs
+    }
   switch (message.type) {
     case AUDIT_FRAME_UPDATE:
       renderAuditFrame(message.payload);
@@ -668,6 +676,10 @@ document.addEventListener("keydown", (e) => {
 
 (async () => {
   const status = await msg({ type: POPUP_GET_STATUS });
+    if (status && status.activeTabId && currentPopupTabId && status.activeTabId !== currentPopupTabId && status.state !== AgentState.IDLE) {
+      addLog("Agent is running on another tab. Please stop it first.", "warning");
+      status.state = AgentState.IDLE;
+    }
   if (status) {
     handleStatusUpdate(status);
     if (status.state === AgentState.RUNNING) {

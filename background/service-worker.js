@@ -443,7 +443,8 @@ async function handleStopAgent(reason = "USER_STOPPED") {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function getAgentStatus() {
-  if (activeAgent) return { status: "OK", ...activeAgent.getStatus() };
+  if (activeAgent) return { status: "OK", activeTabId, ...activeAgent.getStatus() };
+  
   return {
     status: "OK", state: AgentState.IDLE, goal: "", stepCount: 0,
     maxSteps: 30, avgLatency: 0, connection: "OFFLINE",
@@ -455,6 +456,8 @@ function getAgentStatus() {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function broadcastToPopup(type, payload) {
+  payload = payload || {};
+  if (activeTabId) payload.activeTabId = activeTabId;
   chrome.runtime.sendMessage({ type, payload }).catch(() => {});
 }
 
