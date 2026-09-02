@@ -39,10 +39,10 @@ const vaultInitPromise = vaultManager.initialize().catch(e => console.error("[SW
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /** @type {AgentLoop|null} */
-let activeAgent = null;
+const activeAgents = new Map();
 
 /** @type {CaptureEngine|null} */
-let activeCaptureEngine = null;
+const activeCaptureEngines = new Map();
 
 /** @type {chrome.runtime.Port|null} */
 let offscreenPort = null;
@@ -136,7 +136,7 @@ async function ensureOffscreenDocument() {
 
 async function handleOffscreenCrash() {
   console.warn("[SW] Offscreen document crashed. Attempting recovery...");
-  if (activeAgent && activeAgent.state === AgentState.RUNNING) {
+  for (const agent of activeAgents.values()) { if (agent.state === AgentState.RUNNING) agent.pause(); } if (false) {
     activeAgent.pause();
   }
 
@@ -184,7 +184,7 @@ chrome.runtime.onConnect.addListener((port) => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 chrome.tabs.onActivated.addListener((activeInfo) => {
-  if (activeAgent && activeAgent.state === AgentState.RUNNING && activeTabId) {
+  if (activeAgents.has(activeInfo.tabId)) { activeTabId = activeInfo.tabId; } if (false) {
     if (activeInfo.tabId !== activeTabId) {
       // User switched to a different tab - don't auto-stop, just note it
       console.log("[SW] User switched tabs during agent run. Agent continues on original tab.");
@@ -193,9 +193,9 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  if (tabId === activeTabId && activeAgent) {
+  if (activeAgents.has(tabId)) {
     console.warn("[SW] Active tab closed. Stopping agent.");
-    handleStopAgent("TAB_CLOSED");
+    handleStopAgent("TAB_CLOSED", tabId);
   }
 });
 
@@ -225,11 +225,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case POPUP_STOP_AGENT:
-      handleStopAgent("USER_STOPPED").then(sendResponse);
+      handleStopAgent("USER_STOPPED", msg.targetTabId).then(sendResponse);
       return true;
 
     case POPUP_GET_STATUS:
-      sendResponse(getAgentStatus());
+      sendResponse(getAgentStatus(msg.targetTabId));
       return false;
 
     case POPUP_GET_SETTINGS:
@@ -245,11 +245,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case POPUP_GET_HISTORY:
-      storage.loadHistory().then(sendResponse);
+      storage.loadHistory(msg.targetTabId).then(sendResponse);
       return true;
 
     case POPUP_EXPORT_LOG:
-      storage.exportLogsAsText().then((text) => sendResponse({ text }));
+      storage.exportLogsAsText(msg.targetTabId).then((text) => sendResponse({ text }));
       return true;
 
     case POPUP_VAULT_GET:
@@ -269,17 +269,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case POPUP_HITL_RESPONSE:
-      if (activeAgent) activeAgent.handleHitlResponse(msg);
+      if (msg.targetTabId && activeAgents.has(msg.targetTabId)) activeAgents.get(msg.targetTabId).handleHitlResponse(msg);
       sendResponse({status: "OK"});
       return false;
 
     case POPUP_APPROVAL_RESPONSE:
-      if (activeAgent) activeAgent.handleApprovalResponse(msg);
+      if (msg.targetTabId && activeAgents.has(msg.targetTabId)) activeAgents.get(msg.targetTabId).handleApprovalResponse(msg);
       sendResponse({status: "OK"});
       return false;
 
     case POPUP_CLEAR_HISTORY:
-      storage.clearHistory().then(() => sendResponse({ status: "OK" }));
+      storage.clearHistory(msg.targetTabId).then(() => sendResponse({ status: "OK" }));
       return true;
   }
 });
@@ -319,6 +319,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
          || allTabs.find(t => !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"));
     }
     if (!tab?.id) return { status: "ERROR", error: "No automatable browser tab found. Please open a web page first." };
+    if (activeAgents.has(tab.id) && activeAgents.get(tab.id).state === AgentState.RUNNING) return { status: "ERROR", error: "An agent is already running on this tab." };
 
     const url = tab.url || "";
     const BLOCKED = ["chrome://", "chrome-extension://", "edge://", "about:blank",
@@ -353,7 +354,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
     });
 
     await captureEngine.attach();
-    activeCaptureEngine = captureEngine;
+    activeCaptureEngines.set(tab.id, captureEngine);
     activeTabId = tab.id;
 
     // Fetch dynamic DPR
@@ -388,7 +389,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
     });
 
     // Create and start agent loop
-    activeAgent = new AgentLoop({
+    const activeAgent = new AgentLoop({
       captureEngine,
       actionExecutor,
       offscreenPort,
@@ -400,6 +401,7 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       enableAuditStream: settings.enableAuditStream,
     });
 
+    activeAgents.set(tab.id, activeAgent);
     await activeAgent.start(goal.trim());
 
     return { status: "STARTED", dpr, tabId: tab.id, url };
@@ -419,7 +421,10 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
 // 7. STOP AGENT
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-async function handleStopAgent(reason = "USER_STOPPED") {
+async function handleStopAgent(reason = "USER_STOPPED", tabId = null) {
+    if (!tabId && activeTabId) tabId = activeTabId;
+    const activeAgent = activeAgents.get(tabId);
+    const activeCaptureEngine = activeCaptureEngines.get(tabId);
   try {
     if (activeAgent) {
       await activeAgent.stop(reason);

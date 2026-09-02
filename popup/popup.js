@@ -1,7 +1,4 @@
 let currentPopupTabId = null;
-chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  if (tabs.length > 0) currentPopupTabId = tabs[0].id;
-});
 
 /**
  * popup.js - LensAgent Popup Controller (Enhanced)
@@ -199,7 +196,7 @@ startBtn.addEventListener("click", async () => {
 
 stopBtn.addEventListener("click", async () => {
   stopBtn.disabled = true;
-  await msg({ type: POPUP_STOP_AGENT });
+  await msg({ type: POPUP_STOP_AGENT, targetTabId: currentPopupTabId });
   resetToIdle();
   addLog("Agent stopped.", "warning");
 });
@@ -209,7 +206,7 @@ stopBtn.addEventListener("click", async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 exportLogBtn.addEventListener("click", async () => {
-  const resp = await msg({ type: POPUP_EXPORT_LOG });
+  const resp = await msg({ type: POPUP_EXPORT_LOG, targetTabId: currentPopupTabId });
   if (resp?.text) {
     const blob = new Blob([resp.text], { type: "text/plain" });
     const url  = URL.createObjectURL(blob);
@@ -543,7 +540,7 @@ resetSettingsBtn.addEventListener("click", async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function loadHistoryUI() {
-  const history = await msg({ type: POPUP_GET_HISTORY });
+  const history = await msg({ type: POPUP_GET_HISTORY, targetTabId: currentPopupTabId });
   historyList.innerHTML = "";
 
   if (!history || history.length === 0) {
@@ -590,7 +587,7 @@ function formatDuration(ms) {
 }
 
 clearHistoryBtn.addEventListener("click", async () => {
-  await msg({ type: POPUP_CLEAR_HISTORY });
+  await msg({ type: POPUP_CLEAR_HISTORY, targetTabId: currentPopupTabId });
   historyList.innerHTML = `
     <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
 });
@@ -675,7 +672,7 @@ document.addEventListener("keydown", (e) => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 (async () => {
-  const status = await msg({ type: POPUP_GET_STATUS });
+  const status = await msg({ type: POPUP_GET_STATUS, targetTabId: currentPopupTabId });
     if (status && status.activeTabId && currentPopupTabId && status.activeTabId !== currentPopupTabId && status.state !== AgentState.IDLE) {
       addLog("Agent is running on another tab. Please stop it first.", "warning");
       status.state = AgentState.IDLE;
