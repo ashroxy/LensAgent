@@ -2,16 +2,16 @@
 <html class="light" lang="en">
 <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=800, height=600, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>LensAgent</title>
     <!-- We load the compiled static CSS -->
     <link href="popup.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 </head>
-<body class="bg-background text-on-surface font-body-md flex overflow-hidden">
-    <!-- SideNavBar -->
-    <nav class="w-[200px] h-full bg-surface-container-low border-r border-outline-variant/10 shadow-sm flex flex-col py-6 shrink-0 z-20">
-        <div class="px-6 mb-8 flex items-center gap-3">
+<body class="bg-background text-on-surface font-body-md flex flex-col md:flex-row h-screen w-screen overflow-hidden">
+    <!-- SideNavBar (Bottom bar on mobile) -->
+    <nav class="w-full h-16 md:w-[200px] md:h-full bg-surface-container-low border-t md:border-t-0 md:border-r border-outline-variant/10 shadow-sm flex md:flex-col py-2 md:py-6 shrink-0 z-20 order-last md:order-first justify-around md:justify-start">
+        <div class="hidden md:flex px-6 mb-8 items-center gap-3">
             <div class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-primary">lens</span>
             </div>
@@ -20,32 +20,35 @@
                 <p class="font-label-mono text-[10px] text-on-surface-variant">v1.0.4-stable</p>
             </div>
         </div>
-        <div class="flex-1 flex flex-col gap-2 px-3">
-            <button class="nav-btn active flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="agent">
-                <span class="material-symbols-outlined">smart_toy</span>
-                <span class="font-body-md text-body-md">Agent</span>
+        <div class="flex flex-row md:flex-col gap-2 px-3 w-full justify-around md:justify-start flex-1 md:flex-none">
+            <button class="nav-btn active flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="agent">
+                <span class="material-symbols-outlined text-[20px] md:text-[24px]">smart_toy</span>
+                <span class="font-body-md text-[10px] md:text-body-md">Agent</span>
             </button>
-            <button class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="settings">
-                <span class="material-symbols-outlined">settings</span>
-                <span class="font-body-md text-body-md">Settings</span>
+            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="settings">
+                <span class="material-symbols-outlined text-[20px] md:text-[24px]">settings</span>
+                <span class="font-body-md text-[10px] md:text-body-md">Settings</span>
             </button>
-            <button class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="history">
-                <span class="material-symbols-outlined">history</span>
-                <span class="font-body-md text-body-md">History</span>
+            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="history">
+                <span class="material-symbols-outlined text-[20px] md:text-[24px]">history</span>
+                <span class="font-body-md text-[10px] md:text-body-md">History</span>
             </button>
-            <button class="nav-btn flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="vault">
-                <span class="material-symbols-outlined">lock</span>
-                <span class="font-body-md text-body-md">Vault</span>
+            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="vault">
+                <span class="material-symbols-outlined text-[20px] md:text-[24px]">lock</span>
+                <span class="font-body-md text-[10px] md:text-body-md">Vault</span>
             </button>
         </div>
     </nav>
 
     <!-- Main Viewport Area -->
-    <div class="flex-1 flex flex-col h-full relative">
+    <div class="flex-1 flex flex-col h-full relative overflow-hidden">
         <!-- TopAppBar -->
         <header class="h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-10 border-b border-outline-variant/10">
             <div class="font-headline-md text-headline-md font-bold text-on-surface" id="headerTitle">Agent Dashboard</div>
             <div class="flex items-center gap-4">
+                <button id="btnPopout" title="Open in new tab" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors hidden md:flex">
+                    <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                </button>
                 <button class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
                     <span class="material-symbols-outlined text-[18px]">sensors</span>
                 </button>
@@ -53,6 +56,7 @@
                     <div class="w-2 h-2 rounded-full bg-primary animate-pulse" id="statusDot"></div>
                     <span id="headerState">IDLE</span>
                 </div>
+                <div id="connectionBadge" class="conn-badge px-3 py-1 rounded-full neu-recessed text-[10px] font-mono font-bold uppercase transition-colors hidden"></div>
             </div>
         </header>
 
@@ -69,6 +73,7 @@
                             <span class="material-symbols-outlined text-primary text-[20px]">target</span>
                             <input id="goalInput" class="bg-transparent border-none outline-none w-full font-body-md text-body-md text-on-surface placeholder:text-outline/60 p-0" type="text" placeholder="Enter objective..."/>
                         </div>
+                        <div id="errorMsg" hidden class="text-[11px] text-error font-bold mt-2 ml-2 transition-opacity duration-300 opacity-0"></div>
                     </div>
                     <div class="flex gap-3 shrink-0">
                         <button id="startBtn" class="neu-btn-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md flex items-center gap-2 uppercase tracking-wider">
@@ -83,11 +88,12 @@
                 <!-- Dashboard Grid -->
                 <div class="flex flex-col gap-4">
                     <!-- Video Feeds (2x1) -->
-                    <div class="grid gap-4" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2">
                         <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
                             <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button></div>
-                            <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000]">
-                                <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain opacity-70 grayscale mix-blend-luminosity"></canvas>
+                            <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
+                                <span class="text-outline/40 font-mono text-[10px] uppercase absolute z-0 tracking-widest text-center pointer-events-none">Awaiting Signal</span>
+                                <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain opacity-70 grayscale mix-blend-luminosity z-10 relative"></canvas>
                             </div>
                         </div>
                         <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
@@ -96,18 +102,23 @@
                                     <span class="font-mono text-[9px] text-tertiary uppercase tracking-widest">Live</span>
                                 </div>
                             </div></div>
-                            <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000]">
-                                <canvas id="annotatedStream" width="1280" height="720" class="w-full h-full object-contain"></canvas>
+                            <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
+                                <span class="text-outline/40 font-mono text-[10px] uppercase absolute z-0 tracking-widest text-center pointer-events-none">Awaiting Signal</span>
+                                <canvas id="annotatedStream" width="1280" height="720" class="w-full h-full object-contain z-10 relative"></canvas>
                             </div>
                         </div>
                     </div>
 
                     <!-- Metrics (1x6) -->
                     <div class="neu-flat rounded-2xl p-4">
-                        <div class="grid gap-3" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+                        <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
                             <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Steps</span>
                                 <span class="font-mono text-[14px] font-bold text-primary"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
+                            </div>
+                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                                <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Frames</span>
+                                <span id="frameCount" class="font-mono text-[14px] font-bold text-on-surface-variant">0</span>
                             </div>
                             <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1 relative overflow-hidden">
                                 <canvas id="sparklineCanvas" width="150" height="30" class="absolute bottom-0 left-0 w-full h-[30px] opacity-20 pointer-events-none"></canvas>
@@ -146,7 +157,9 @@
                             <button id="exportLogBtn" class="neu-btn px-3 py-1 rounded text-primary text-[10px] uppercase font-bold tracking-wider">Export</button>
                         </div>
                         <div class="flex-1 neu-recessed rounded-xl bg-surface-container-lowest p-3 overflow-y-auto">
-                            <div id="terminalBody" class="font-mono text-[11px] leading-relaxed text-on-surface-variant flex flex-col gap-2"></div>
+                            <div id="terminalBody" class="font-mono text-[11px] leading-relaxed text-on-surface-variant flex flex-col gap-2">
+                                <span class="opacity-40 flex items-center justify-center h-full">Waiting for execution to start...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -168,6 +181,14 @@
                         <div class="flex flex-col gap-2">
                             <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Timeout (ms)</label>
                             <input id="setting-timeout" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Capture Quality</label>
+                            <input id="settCaptureQuality" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Stabilize Delay (ms)</label>
+                            <input id="settStabilizeDelay" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
                     </div>
                 </div>
@@ -295,8 +316,9 @@
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
-        <div class="flex-1 neu-recessed rounded-2xl relative overflow-hidden bg-[#000] p-2 w-full">
-            <canvas id="modalCanvas" class="w-full h-full object-contain"></canvas>
+        <div class="flex-1 neu-recessed rounded-2xl relative overflow-hidden bg-[#000] p-2 w-full flex items-center justify-center">
+            <span class="text-outline/40 font-mono text-[14px] uppercase absolute z-0 tracking-widest text-center pointer-events-none">Awaiting Signal</span>
+            <canvas id="modalCanvas" class="w-full h-full object-contain z-10 relative"></canvas>
         </div>
     </div>
 

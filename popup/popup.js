@@ -466,8 +466,10 @@ function setState(state) {
 
 
 function setConnectionBadge(quality) {
-  if (!connBadge) return; connBadge.textContent = quality;
-  if (connBadge) connBadge.className = "conn-badge";
+  if (!connBadge) return; 
+  connBadge.textContent = quality;
+  connBadge.hidden = false;
+  connBadge.className = "conn-badge px-3 py-1 rounded-full neu-recessed text-[10px] font-mono font-bold uppercase transition-colors";
   const q = quality.toLowerCase();
   if (["excellent","good","fair","poor"].includes(q)) connBadge.classList.add(q);
 }
@@ -730,14 +732,14 @@ async function loadVaultUI() {
         const opt4 = document.createElement("option"); opt4.value = "Other"; opt4.textContent = "Other";
         input.appendChild(opt1); input.appendChild(opt2); input.appendChild(opt3); input.appendChild(opt4);
         input.id = `vault_${field.key}`;
-        // icon logic appended below
       } else {
         input = document.createElement("input");
         input.type = field.type;
         input.placeholder = field.placeholder;
         input.id = `vault_${field.key}`;
-        input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none";
+        input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none pr-12";
       }
+      
       if (field.type === "select") {
         input.style.appearance = "none";
         input.style.webkitAppearance = "none";
@@ -749,11 +751,19 @@ async function loadVaultUI() {
       if (field.type === "select") {
         const icon = document.createElement("span");
         icon.className = "material-symbols-outlined text-on-surface-variant";
-        icon.style.cssText = "position: absolute; right: 12px; pointer-events: none;";
+        icon.style.cssText = "position: absolute; right: 40px; pointer-events: none;";
         icon.textContent = "expand_more";
         inner.appendChild(icon);
       }
       
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.id = `vaultDel_${field.key}`;
+      delBtn.className = "absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-error opacity-50 hover:opacity-100 hover:bg-error/10 transition-all";
+      delBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">delete</span>';
+      delBtn.addEventListener("click", () => deleteVaultField(field.key));
+      inner.appendChild(delBtn);
+
       if (field.key === 'pincode' || field.type === 'tel') {
         input.addEventListener('input', function() {
           this.value = this.value.replace(/[^0-9+\-\s]/g, '');
@@ -767,7 +777,6 @@ async function loadVaultUI() {
   }
   populateVaultUI(data || {});
 }
-
 
 function populateVaultUI(vaultData) {
   for (const field of VAULT_FIELDS) {
@@ -976,49 +985,5 @@ loadVaultUI();
 
 
 
-// FULLSCREEN MODALS
-const btnRawFullscreen = document.getElementById("btnRawFullscreen");
-const btnSanitizedFullscreen = document.getElementById("btnSanitizedFullscreen");
-const fullscreenModal = document.getElementById("fullscreenModal");
-const btnCloseModal = document.getElementById("btnCloseModal");
-// modalTitle already declared
-const modalFeed = document.getElementById("modalFeed");
 
-let activeFullscreenInterval = null;
 
-if (btnRawFullscreen) {
-  btnRawFullscreen.addEventListener("click", () => {
-    modalTitle.innerHTML = "<span class=\"material-symbols-outlined text-primary\">visibility</span> Raw Viewport - Fullscreen";
-    fullscreenModal.classList.remove("opacity-0", "pointer-events-none");
-    fullscreenModal.classList.add("opacity-100");
-    if (activeFullscreenInterval) clearInterval(activeFullscreenInterval);
-    activeFullscreenInterval = setInterval(() => {
-      const rawFeed = document.getElementById("rawFeed");
-      if (rawFeed && rawFeed.src) modalFeed.src = rawFeed.src;
-    }, 100);
-  });
-}
-
-if (btnSanitizedFullscreen) {
-  btnSanitizedFullscreen.addEventListener("click", () => {
-    modalTitle.innerHTML = "<span class=\"material-symbols-outlined text-primary\">security</span> Sanitized Stream - Fullscreen";
-    fullscreenModal.classList.remove("opacity-0", "pointer-events-none");
-    fullscreenModal.classList.add("opacity-100");
-    if (activeFullscreenInterval) clearInterval(activeFullscreenInterval);
-    activeFullscreenInterval = setInterval(() => {
-      const redactedFeed = document.getElementById("redactedFeed");
-      if (redactedFeed && redactedFeed.src) modalFeed.src = redactedFeed.src;
-    }, 100);
-  });
-}
-
-if (btnCloseModal) {
-  btnCloseModal.addEventListener("click", () => {
-    fullscreenModal.classList.remove("opacity-100");
-    fullscreenModal.classList.add("opacity-0", "pointer-events-none");
-    if (activeFullscreenInterval) {
-      clearInterval(activeFullscreenInterval);
-      activeFullscreenInterval = null;
-    }
-  });
-}
