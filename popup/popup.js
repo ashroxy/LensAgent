@@ -139,8 +139,7 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 // If this page is opened as a full tab (not a popup), we are in "pop-out" mode.
 // In pop-out mode, Start Agent must target a real webpage tab, not this extension tab.
 let targetTabId = null;
-const isPopoutMode = window.location.href.startsWith("chrome-extension://") 
-  && (window.innerWidth > 800 || document.referrer === "");
+const isPopoutMode = window.innerWidth > 800 || window.innerHeight > 600;
 
 const btnPopout = document.getElementById("btnPopout");
 
@@ -205,6 +204,23 @@ stopBtn.addEventListener("click", async () => {
 // EXPORT LOG
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+if (btnTestConnection) {
+  btnTestConnection.addEventListener("click", async () => {
+    btnTestConnection.classList.add("opacity-50");
+    try {
+      let data = await chrome.storage.local.get("agentSettings");
+      const url = (data?.agentSettings?.backendUrl || "http://localhost:8000") + "/api/health";
+      const res = await fetch(url);
+      if (res.ok) setConnectionBadge("EXCELLENT");
+      else setConnectionBadge("POOR");
+    } catch(err) {
+      setConnectionBadge("OFFLINE");
+    } finally {
+      setTimeout(() => btnTestConnection.classList.remove("opacity-50"), 200);
+    }
+  });
+}
+
 exportLogBtn.addEventListener("click", async () => {
   const resp = await msg({ type: POPUP_EXPORT_LOG, targetTabId: targetTabId || currentPopupTabId });
   if (resp?.text) {
@@ -246,6 +262,9 @@ chrome.runtime.onMessage.addListener((message) => {
       break;
     case BG_VAULT_DATA:
       populateVaultUI(message.payload);
+      break;
+    case BG_SETTINGS_UPDATED:
+      loadSettingsUI();
       break;
   }
 });
@@ -441,7 +460,7 @@ function addLog(text, type = "info") {
       actionLogEl.removeChild(actionLogEl.firstElementChild);
     }
     actionLogEl.scrollTop = actionLogEl.scrollHeight;
-  while (actionLogEl.childElementCount > 150) actionLogEl.removeChild(actionLogEl.firstChild);
+  
 }
 
 function setState(state) {
@@ -533,7 +552,7 @@ saveSettingsBtn.addEventListener("click", async () => {
 resetSettingsBtn.addEventListener("click", async () => {
   await msg({ type: POPUP_UPDATE_SETTINGS, settings: { ...DEFAULT_SETTINGS } });
   await loadSettingsUI();
-  settingsMsg.textContent = "â†©ï¸ Settings reset to defaults.";
+  settingsMsg.textContent = "↩️ Settings reset to defaults.";
   settingsMsg.hidden = false;
   setTimeout(() => { settingsMsg.hidden = true; }, 2000);
 });
