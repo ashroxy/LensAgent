@@ -1,4 +1,4 @@
-{
+﻿{
   "manifest_version": 3,
   "name": "LensAgent - Privacy-Preserving Visual Browser Agent",
   "short_name": "LensAgent",
@@ -59,4 +59,5 @@
     "128": "assets/icons/icon128.png"
   }
 }
+
 
