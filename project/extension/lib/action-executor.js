@@ -100,7 +100,7 @@ export class ActionExecutor {
         action.type === ActionType.CLICK) {
       const raw = String(action.text ?? action.value ?? action.optionText ?? '');
       const t = raw.trim();
-      if (/^[@#][\w.\-]+$/.test(t) || /^<VAULT_[A-Z0-9_]+\>\s*$/.test(t)) {
+      if (/^[@#][\w.\-]+$/.test(t) || /^<VAULT_[A-Z0-9_]+\>\s*$/i.test(t) || /^vault[:_][\w.\-]+$/i.test(t)) {
         return { success: false, action: action.type, detail: `Refusing invented token: ${t}` };
       }
     }
@@ -426,7 +426,7 @@ export class ActionExecutor {
           // before this point, so any bare @x / #x / token.x placeholder is a
           // model confabulation and must never be written into a real field.
           const rawVal = typeof value === 'string' ? value : String(value ?? '');
-          if (/^[@#][\w.\-]+$/.test(rawVal.trim()) || /^<VAULT_[A-Z_]+\>\s*$/.test(rawVal.trim())) {
+          if (/^[@#][\w.\-]+$/.test(rawVal.trim()) || /^<VAULT_[A-Z0-9_]+\>\s*$/i.test(rawVal.trim()) || /^vault[:_][\w.\-]+$/i.test(rawVal.trim())) {
             return { success: false, error: 'Refusing to write invented token: ' + rawVal };
           }
 

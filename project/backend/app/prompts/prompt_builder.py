@@ -82,6 +82,9 @@ class PromptBuilder:
             parts.append("\nAVAILABLE VAULT TOKENS (use these exact tokens for personal data):")
             for k in keys:
                 parts.append(f"  {k}")
+        else:
+            parts.append("\nAVAILABLE VAULT TOKENS: [EMPTY - NO TOKENS AVAILABLE]")
+            parts.append("CRITICAL: The vault is currently empty. Do NOT invent or guess vault tokens (e.g. no vault:name). If a field requires personal info, you MUST use the ASK_USER action.")
 
         # Completed fields (only client-confirmed fills count as already filled).
         confirmed_history = {
