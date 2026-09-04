@@ -111,33 +111,33 @@
 
                     <!-- Metrics (1x6) -->
                     <div class="neu-flat rounded-2xl p-4">
-                        <div class="grid gap-3 grid-cols-7">
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                        <div class="grid gap-2 grid-cols-7">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Steps</span>
-                                <span class="font-mono text-[14px] font-bold text-primary"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
+                                <span class="font-mono text-[12px] font-bold text-primary whitespace-nowrap"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
                             </div>
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Frames</span>
-                                <span id="frameCount" class="font-mono text-[14px] font-bold text-on-surface-variant">0</span>
+                                <span id="frameCount" class="font-mono text-[12px] font-bold text-on-surface-variant whitespace-nowrap">0</span>
                             </div>
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1 relative overflow-hidden">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1 relative overflow-hidden">
                                 <canvas id="sparklineCanvas" width="150" height="30" class="absolute bottom-0 left-0 w-full h-[30px] opacity-20 pointer-events-none"></canvas>
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider z-10">Latency</span>
-                                <span class="font-mono text-[14px] font-bold text-primary z-10"><span id="latencyMs">0</span>ms</span>
+                                <span class="font-mono text-[12px] font-bold text-primary z-10 whitespace-nowrap"><span id="latencyMs">0</span>ms</span>
                             </div>
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Redactions</span>
-                                <span id="redactionCount" class="font-mono text-[14px] font-bold text-tertiary">0</span>
+                                <span id="redactionCount" class="font-mono text-[12px] font-bold text-tertiary whitespace-nowrap">0</span>
                             </div>
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">FPS</span>
-                                <span id="fpsCount" class="font-mono text-[14px] font-bold text-primary">-</span>
+                                <span id="fpsCount" class="font-mono text-[12px] font-bold text-primary whitespace-nowrap">-</span>
                             </div>
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Dropped</span>
-                                <span id="skippedCount" class="font-mono text-[14px] font-bold text-error">0</span>
+                                <span id="skippedCount" class="font-mono text-[12px] font-bold text-error whitespace-nowrap">0</span>
                             </div>
-                            <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
+                            <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Quality</span>
                                 <span class="font-mono text-[10px] whitespace-nowrap font-bold text-on-surface-variant flex flex-col items-center">
                                     <span id="qualityDisplay">100%</span>

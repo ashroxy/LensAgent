@@ -142,3 +142,7 @@ body {
 .absolute.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
 input#goalInput:focus-visible, input.border-none:focus-visible { outline: none !important; }
 .neu-recessed:focus-within { outline: 2px solid #305f9f; outline-offset: 2px; }
+
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.flex { display: flex; }
