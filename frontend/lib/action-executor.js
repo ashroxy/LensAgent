@@ -512,7 +512,7 @@ export class ActionExecutor {
                   d = String(p1).padStart(2, '0');
                   mo = String(p2).padStart(2, '0');
                 }
-                return `${y}-${mo}-${d}`;
+                return \`\${y}-\${mo}-\${d}\`;
               }
               const ts = Date.parse(s);
               if (!isNaN(ts)) {
@@ -520,7 +520,7 @@ export class ActionExecutor {
                 const y = dt.getFullYear();
                 const mo = String(dt.getMonth() + 1).padStart(2, '0');
                 const d = String(dt.getDate()).padStart(2, '0');
-                return `${y}-${mo}-${d}`;
+                return \`\${y}-\${mo}-\${d}\`;
               }
               return s;
             };

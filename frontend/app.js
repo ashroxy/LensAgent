@@ -577,7 +577,7 @@ async function loadHistoryUI() {
 
   if (!history || history.length === 0) {
     historyList.innerHTML = `
-      <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
+      <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant mb-4">No past sessions yet.</span><button id="emptyGoToAgentBtn" class="neu-btn px-4 py-2 rounded-xl text-primary font-bold text-[11px] uppercase tracking-wider">Run an agent</button></div>`;
     return;
   }
 
@@ -622,7 +622,7 @@ clearHistoryBtn.addEventListener("click", async () => {
   if (!confirm("Clear all session history? This cannot be undone.")) return;
   await msg({ type: POPUP_CLEAR_HISTORY, targetTabId: targetTabId || currentPopupTabId });
   historyList.innerHTML = `
-    <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
+    <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant mb-4">No past sessions yet.</span><button id="emptyGoToAgentBtn" class="neu-btn px-4 py-2 rounded-xl text-primary font-bold text-[11px] uppercase tracking-wider">Run an agent</button></div>`;
 });
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -737,7 +737,7 @@ async function loadVaultUI() {
   
   const entries = Object.entries(currentVaultData);
   if (entries.length === 0) {
-      vaultList.innerHTML = `<div class="text-center text-on-surface-variant text-[12px] py-4">Vault is empty.</div>`;
+      vaultList.innerHTML = `<div class="m-auto text-center flex flex-col items-center opacity-60 py-4"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">no_encryption</span><span class="text-[12px] text-on-surface-variant">Vault is empty. Add data below.</span></div>`;
   }
 
   for (const [key, value] of entries) {
@@ -898,23 +898,36 @@ function showHitlPrompt(payload) {
   hitlOverlay.hidden = false;
   hitlInput.focus();
   
-  // Set a helpful placeholder based on the key
   let placeholder = 'Type your answer here...';
+  
+  if (!pendingHitlVaultKey && payload.question) {
+    const q = payload.question.toLowerCase();
+    if (q.includes('date') || q.includes('dob') || q.includes('birth')) pendingHitlVaultKey = 'dob';
+    else if (q.includes('phone') || q.includes('mobile')) pendingHitlVaultKey = 'phone';
+    else if (q.includes('email')) pendingHitlVaultKey = 'email';
+    else if (q.includes('name') || q.includes('full name')) pendingHitlVaultKey = 'fullName';
+    else if (q.includes('zip') || q.includes('postal')) pendingHitlVaultKey = 'zip';
+    else if (q.includes('gender')) pendingHitlVaultKey = 'gender';
+  }
+
   if (pendingHitlVaultKey) {
     hitlVaultKeyLabel.hidden = false;
     hitlVaultKey.textContent = pendingHitlVaultKey;
-    const key = pendingHitlVaultKey.toLowerCase();
-    if (key.includes('date') || key.includes('dob')) placeholder = 'e.g. MM/DD/YYYY';
-    else if (key.includes('phone') || key.includes('mobile')) placeholder = 'e.g. (123) 456-7890';
-    else if (key.includes('email')) placeholder = 'e.g. name@example.com';
-    else if (key.includes('zip') || key.includes('postal')) placeholder = 'e.g. 12345';
-    else if (key.includes('card') && key.includes('num')) placeholder = 'e.g. 4111222233334444';
-    else if (key.includes('cvv') || key.includes('cvc')) placeholder = 'e.g. 123';
-    else if (key.includes('exp')) placeholder = 'e.g. MM/YY';
-    else if (key.includes('name')) placeholder = 'e.g. John Doe';
   } else {
     hitlVaultKeyLabel.hidden = true;
   }
+
+  const searchKey = ((pendingHitlVaultKey || '') + ' ' + (payload.question || '')).toLowerCase();
+  
+  if (searchKey.includes('date') || searchKey.includes('dob') || searchKey.includes('birth')) placeholder = 'e.g. YYYY-MM-DD or DD/MM/YYYY';
+  else if (searchKey.includes('phone') || searchKey.includes('mobile')) placeholder = 'e.g. (123) 456-7890';
+  else if (searchKey.includes('email')) placeholder = 'e.g. name@example.com';
+  else if (searchKey.includes('zip') || searchKey.includes('postal')) placeholder = 'e.g. 12345';
+  else if (searchKey.includes('card') && searchKey.includes('num')) placeholder = 'e.g. 4111222233334444';
+  else if (searchKey.includes('cvv') || searchKey.includes('cvc')) placeholder = 'e.g. 123';
+  else if (searchKey.includes('exp')) placeholder = 'e.g. MM/YY';
+  else if (searchKey.includes('name')) placeholder = 'e.g. John Doe';
+
   hitlInput.placeholder = placeholder;
   
   setState(AgentState.WAITING_FOR_USER);
@@ -924,19 +937,31 @@ function showHitlPrompt(payload) {
 async function sendHitlResponse() {
   const answer = hitlInput.value.trim();
   if (!answer) return;
-  
-  const saveToVault = hitlSaveToVault.checked && pendingHitlVaultKey;
-  
+
+  let keyToSave = pendingHitlVaultKey;
+  if (!keyToSave && hitlQuestion.textContent) {
+    const q = hitlQuestion.textContent.toLowerCase();
+    if (q.includes('date') || q.includes('dob') || q.includes('birth')) keyToSave = 'dob';
+    else if (q.includes('phone') || q.includes('mobile')) keyToSave = 'phone';
+    else if (q.includes('email')) keyToSave = 'email';
+    else if (q.includes('name')) keyToSave = 'fullName';
+    else if (q.includes('zip') || q.includes('postal')) keyToSave = 'zip';
+    else if (q.includes('gender')) keyToSave = 'gender';
+  }
+
+  const saveToVault = hitlSaveToVault.checked && !!keyToSave;
+
   if (pendingHitlCorrelationId !== null) {
     await msg({
       type: POPUP_HITL_RESPONSE,
       correlationId: pendingHitlCorrelationId,
       answer,
+      response: answer,
       saveToVault,
-      vaultKey: pendingHitlVaultKey,
+      vaultKey: keyToSave,
     });
   }
-  
+
   hitlOverlay.hidden = true;
   pendingHitlCorrelationId = null;
   pendingHitlVaultKey = null;
@@ -944,13 +969,11 @@ async function sendHitlResponse() {
 }
 
 if (hitlSendBtn) hitlSendBtn.addEventListener('click', sendHitlResponse);
-if (hitlInput) hitlInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendHitlResponse();
-});
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// JIT ACTION APPROVAL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+if (hitlInput) {
+  hitlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendHitlResponse();
+  });
+}
 
 function showApprovalPrompt(payload) {
   pendingApprovalCorrelationId = payload.correlationId;
