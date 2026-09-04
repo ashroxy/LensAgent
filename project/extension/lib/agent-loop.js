@@ -52,7 +52,7 @@ export class AgentLoop {
     this.enableAudit     = config.enableAuditStream ?? true;
 
     // Session management for backend compatibility
-    this.sessionId       = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.sessionId       = `sess_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 9)}`;
     this._lastExecutionResults = [];
     this._lastValidationFeedback = [];
 
@@ -671,7 +671,7 @@ export class AgentLoop {
     });
 
     const payload = {
-      session_id: this.sessionId || `sess_${Date.now()}`,
+      session_id: this.sessionId || `sess_${Date.now().toString(36)}`,
       task: this.goal,
       browser_state: {
         page: sanitizedPage,
