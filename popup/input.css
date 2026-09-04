@@ -162,3 +162,5 @@ input#goalInput:focus-visible, input.border-none:focus-visible { outline: none !
     height: 30px !important;
     pointer-events: none !important;
 }
+
+.right-2 { right: 0.5rem !important; }
