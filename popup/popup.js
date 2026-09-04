@@ -1,4 +1,4 @@
-﻿let currentPopupTabId = null;
+let currentPopupTabId = null;
 
 /**
  * popup.js - LensAgent Popup Controller (Enhanced)
@@ -174,7 +174,6 @@ startBtn.addEventListener("click", async () => {
   if (!goal) { showError("Please enter a goal."); return; }
   hideError();
   startBtn.disabled = true;
-  startBtn.innerHTML = \'<span class="loading-spinner"></span> Starting...\';
 
   const payload = { type: POPUP_START_AGENT, goal };
   if (targetTabId) payload.targetTabId = targetTabId;
@@ -185,13 +184,11 @@ startBtn.addEventListener("click", async () => {
     stopBtn.disabled = false;
     goalInput.disabled = true;
     setState(AgentState.RUNNING);
-    startBtn.innerHTML = \'<span class="material-symbols-outlined">play_arrow</span> Start\';
     addLog(`Agent started - Goal: "${goal}"`, "action");
     if (resp.dpr) if (dprDisplayEl) dprDisplayEl.textContent = `DPR: ${resp.dpr}`;
     latencyHistory = [];
   } else {
     startBtn.disabled = false;
-    startBtn.innerHTML = \'<span class="material-symbols-outlined">play_arrow</span> Start\';
     showError(resp?.error || "Failed to start agent.");
     addLog(`Start failed: ${resp?.error}`, "error");
   }
@@ -204,33 +201,9 @@ stopBtn.addEventListener("click", async () => {
   addLog("Agent stopped.", "warning");
 });
 
-goalInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !startBtn.disabled) startBtn.click();
-});
-
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EXPORT LOG
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-if (btnTestConnection) {
-  btnTestConnection.addEventListener("click", async () => {
-    btnTestConnection.classList.add("opacity-50");
-    try {
-      let { agentSettings } = await chrome.storage.local.get("agentSettings");
-      const url = (agentSettings?.backendUrl || "http://localhost:8000") + "/api/health";
-      const res = await fetch(url);
-      if (res.ok) {
-        setConnectionBadge("EXCELLENT");
-      } else {
-        setConnectionBadge("POOR");
-      }
-    } catch(err) {
-      setConnectionBadge("OFFLINE");
-    } finally {
-      setTimeout(() => btnTestConnection.classList.remove("opacity-50"), 200);
-    }
-  });
-}
 
 exportLogBtn.addEventListener("click", async () => {
   const resp = await msg({ type: POPUP_EXPORT_LOG, targetTabId: targetTabId || currentPopupTabId });
@@ -360,57 +333,57 @@ function updateSparkline(latency) {
   const w = sparkCanvas.width; const h = sparkCanvas.height;
   const max = Math.max(50, ...latencyHistory);
 
-  sparkCtx.clearRect(0, 0, w, h);
+  if (sparkCtx) sparkCtx.clearRect(0, 0, w, h);
 
   // Grid line at 500ms
-  sparkCtx.strokeStyle = "#c3c6d2";
-  sparkCtx.lineWidth = 0.5;
+  if (sparkCtx) sparkCtx.strokeStyle = "#c3c6d2";
+  if (sparkCtx) sparkCtx.lineWidth = 0.5;
   const gridY = h - (500 / max) * (h - 8);
-  sparkCtx.beginPath();
-  sparkCtx.moveTo(0, gridY);
-  sparkCtx.lineTo(w, gridY);
-  sparkCtx.stroke();
+  if (sparkCtx) sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.moveTo(0, gridY);
+  if (sparkCtx) sparkCtx.lineTo(w, gridY);
+  if (sparkCtx) sparkCtx.stroke();
 
   if (latencyHistory.length < 2) return;
 
   // Gradient fill
-  const grad = sparkCtx.createLinearGradient(0, 0, 0, h);
+  const grad = sparkCtx ? sparkCtx.createLinearGradient(0, 0, 0, h) : null;
   grad.addColorStop(0, "rgba(48, 95, 159, 0.2)");
   grad.addColorStop(1, "rgba(48, 95, 159, 0.0)");
 
   const step = w / (MAX_SPARKLINE - 1);
 
   // Fill area
-  sparkCtx.beginPath();
-  sparkCtx.moveTo(0, h);
+  if (sparkCtx) sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.moveTo(0, h);
   for (let i = 0; i < latencyHistory.length; i++) {
     const x = i * step;
     const y = h - (latencyHistory[i] / max) * (h - 8);
-    sparkCtx.lineTo(x, y);
+    if (sparkCtx) sparkCtx.lineTo(x, y);
   }
-  sparkCtx.lineTo((latencyHistory.length - 1) * step, h);
-  sparkCtx.closePath();
-  sparkCtx.fillStyle = grad;
-  sparkCtx.fill();
+  if (sparkCtx) sparkCtx.lineTo((latencyHistory.length - 1) * step, h);
+  if (sparkCtx) sparkCtx.closePath();
+  if (sparkCtx) sparkCtx.fillStyle = grad;
+  if (sparkCtx) sparkCtx.fill();
 
   // Line
-  sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.beginPath();
   for (let i = 0; i < latencyHistory.length; i++) {
     const x = i * step;
     const y = h - (latencyHistory[i] / max) * (h - 8);
-    { i === 0 ? sparkCtx.moveTo(x, y) : sparkCtx.lineTo(x, y); }
+    if(sparkCtx) { i === 0 ? sparkCtx.moveTo(x, y) : sparkCtx.lineTo(x, y); }
   }
-  sparkCtx.strokeStyle = "#305f9f";
-  sparkCtx.lineWidth = 1.5;
-  sparkCtx.stroke();
+  if (sparkCtx) sparkCtx.strokeStyle = "#305f9f";
+  if (sparkCtx) sparkCtx.lineWidth = 1.5;
+  if (sparkCtx) sparkCtx.stroke();
 
   // Current value dot
   const lastX = (latencyHistory.length - 1) * step;
   const lastY = h - (latencyHistory[latencyHistory.length - 1] / max) * (h - 8);
-  sparkCtx.beginPath();
-  sparkCtx.arc(lastX, lastY, 2.5, 0, 2 * Math.PI);
-  sparkCtx.fillStyle = "#305f9f";
-  sparkCtx.fill();
+  if (sparkCtx) sparkCtx.beginPath();
+  if (sparkCtx) sparkCtx.arc(lastX, lastY, 2.5, 0, 2 * Math.PI);
+  if (sparkCtx) sparkCtx.fillStyle = "#305f9f";
+  if (sparkCtx) sparkCtx.fill();
 }
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -468,7 +441,7 @@ function addLog(text, type = "info") {
       actionLogEl.removeChild(actionLogEl.firstElementChild);
     }
     actionLogEl.scrollTop = actionLogEl.scrollHeight;
-
+  while (actionLogEl.childElementCount > 150) actionLogEl.removeChild(actionLogEl.firstChild);
 }
 
 function setState(state) {
@@ -560,7 +533,7 @@ saveSettingsBtn.addEventListener("click", async () => {
 resetSettingsBtn.addEventListener("click", async () => {
   await msg({ type: POPUP_UPDATE_SETTINGS, settings: { ...DEFAULT_SETTINGS } });
   await loadSettingsUI();
-  settingsMsg.textContent = "↩️ Settings reset to defaults.";
+  settingsMsg.textContent = "â†©ï¸ Settings reset to defaults.";
   settingsMsg.hidden = false;
   setTimeout(() => { settingsMsg.hidden = true; }, 2000);
 });
@@ -709,10 +682,6 @@ document.addEventListener("keydown", (e) => {
       status.state = AgentState.IDLE;
     }
   if (status) {
-    // Show connection badge with initial OFFLINE state
-    if (connBadge && connBadge.hidden) {
-      setConnectionBadge('OFFLINE');
-    }
     handleStatusUpdate(status);
     if (status.state === AgentState.RUNNING) {
       startBtn.disabled = true; stopBtn.disabled = false; goalInput.disabled = true;
@@ -744,7 +713,7 @@ async function loadVaultUI() {
     vaultForm.innerHTML = "";
     for (const field of VAULT_FIELDS) {
       const wrapper = document.createElement("div");
-      wrapper.className = "flex flex-col gap-1 w-full mb-3";
+      wrapper.className = "flex flex-col gap-xs w-full mb-3";
       
       const label = document.createElement("label");
       label.className = "font-label-md text-label-md text-on-surface-variant ml-2";
@@ -883,6 +852,15 @@ function showVaultMsg(text, type = 'info') {
   }, 3000);
 
 }
+
+  
+  // Wire individual delete buttons
+  for (const field of VAULT_FIELDS) {
+    const delBtn = document.getElementById(`vaultDel_${field.key}`);
+    if (delBtn) delBtn.addEventListener('click', () => deleteVaultField(field.key));
+  }
+
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HITL (HUMAN-IN-THE-LOOP) CHAT
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -991,15 +969,12 @@ if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprova
 
 
 
-
 // Wire vault buttons
 const saveVaultBtn = document.getElementById('saveVaultBtn');
 const flushVaultBtn = document.getElementById('clearVaultBtn');
 if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
 if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
 loadVaultUI();
-
-
 
 
 

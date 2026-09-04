@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="light" lang="en">
 <head>
     <meta charset="utf-8"/>
@@ -17,23 +17,23 @@
             </div>
             <div>
                 <h1 class="font-headline-md text-[16px] font-bold text-primary tracking-tight">LensAgent</h1>
-                <p class="font-label-mono text-[10px] text-on-surface-variant">v1.0.0-stable</p>
+                <p class="font-label-mono text-[10px] text-on-surface-variant">v1.0.4-stable</p>
             </div>
         </div>
         <div class="flex flex-row md:flex-col gap-2 px-3 w-full justify-around md:justify-start flex-1 md:flex-none">
-            <button class="nav-btn active flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="agent" aria-label="Agent Dashboard">
+            <button class="nav-btn active flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="agent">
                 <span class="material-symbols-outlined text-[20px] md:text-[24px]">smart_toy</span>
                 <span class="font-body-md text-[10px] md:text-body-md">Agent</span>
             </button>
-            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="settings" aria-label="System Settings">
+            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="settings">
                 <span class="material-symbols-outlined text-[20px] md:text-[24px]">settings</span>
                 <span class="font-body-md text-[10px] md:text-body-md">Settings</span>
             </button>
-            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="history" aria-label="Session History">
+            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="history">
                 <span class="material-symbols-outlined text-[20px] md:text-[24px]">history</span>
                 <span class="font-body-md text-[10px] md:text-body-md">History</span>
             </button>
-            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="vault" aria-label="Identity Vault">
+            <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="vault">
                 <span class="material-symbols-outlined text-[20px] md:text-[24px]">lock</span>
                 <span class="font-body-md text-[10px] md:text-body-md">Vault</span>
             </button>
@@ -49,14 +49,14 @@
                 <button id="btnPopout" title="Open in new tab" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors hidden md:flex">
                     <span class="material-symbols-outlined text-[18px]">open_in_new</span>
                 </button>
-                <button id="btnTestConnection" title="Test backend connection" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" aria-label="Test backend connection">
+                <button class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
                     <span class="material-symbols-outlined text-[18px]">sensors</span>
                 </button>
                 <div class="px-3 py-1 rounded-full neu-recessed text-[10px] font-mono font-bold text-primary uppercase flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-primary animate-pulse" id="statusDot"></div>
                     <span id="headerState">IDLE</span>
                 </div>
-                <div id="connectionBadge" class="conn-badge offline px-3 py-1 rounded-full neu-recessed text-[10px] font-mono font-bold uppercase transition-colors">OFFLINE</div>
+                <div id="connectionBadge" class="conn-badge px-3 py-1 rounded-full neu-recessed text-[10px] font-mono font-bold uppercase transition-colors hidden"></div>
             </div>
         </header>
 
@@ -71,7 +71,7 @@
                         <label class="block font-label-md text-[11px] text-on-surface-variant mb-2 ml-2 uppercase tracking-wider">Agent Goal</label>
                         <div class="neu-recessed rounded-xl px-4 py-3 flex items-center gap-3">
                             <span class="material-symbols-outlined text-primary text-[20px]">target</span>
-                            <input id="goalInput" class="bg-transparent border-none outline-none w-full font-body-md text-body-md text-on-surface placeholder:text-outline/60 p-0" type="text" placeholder="Enter objective..." aria-label="Agent goal"/>
+                            <input id="goalInput" class="bg-transparent border-none outline-none w-full font-body-md text-body-md text-on-surface placeholder:text-outline/60 p-0" type="text" placeholder="Enter objective..."/>
                         </div>
                         <div id="errorMsg" hidden class="text-[11px] text-error font-bold mt-2 ml-2 transition-opacity duration-300 opacity-0"></div>
                     </div>
@@ -154,7 +154,7 @@
                                 <span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
                                 <span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-widest">Execution Log</span>
                             </div>
-                            <button id="exportLogBtn" class="neu-btn px-3 py-1 rounded text-primary text-[10px] uppercase font-bold tracking-wider" aria-label="Export execution log">Export</button>
+                            <button id="exportLogBtn" class="neu-btn px-3 py-1 rounded text-primary text-[10px] uppercase font-bold tracking-wider">Export</button>
                         </div>
                         <div class="flex-1 neu-recessed rounded-xl bg-surface-container-lowest p-3 overflow-y-auto">
                             <div id="terminalBody" class="font-mono text-[11px] leading-relaxed text-on-surface-variant flex flex-col gap-2">
@@ -278,13 +278,13 @@
     </div>
 
     <!-- OVERLAYS -->
-    <div id="hitlOverlay" hidden class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="hitlDialogTitle">
+    <div id="hitlOverlay" hidden class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="neu-flat rounded-2xl p-6 w-[400px] flex flex-col">
-            <div id="hitlDialogTitle" class="flex items-center gap-2 text-primary font-bold mb-3">
+            <div class="flex items-center gap-2 text-primary font-bold mb-3">
                 <span class="material-symbols-outlined">help</span> Agent needs input
             </div>
             <p id="hitlQuestion" class="text-[14px] text-on-surface mb-4">Loading...</p>
-            <input id="hitlInput" type="text" class="neu-recessed w-full rounded-lg px-3 py-2 text-[13px] border-none outline-none mb-3" aria-label="Your response to the agent"/>
+            <input id="hitlInput" type="text" class="neu-recessed w-full rounded-lg px-3 py-2 text-[13px] border-none outline-none mb-3"/>
             <div class="flex items-center justify-between mb-4">
                 <label class="flex items-center gap-2 text-[11px] text-on-surface-variant cursor-pointer">
                     <input type="checkbox" id="hitlSaveToVault" class="accent-primary" checked> Save to Vault
@@ -295,10 +295,10 @@
         </div>
     </div>
 
-    <div id="approvalOverlay" hidden class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="approvalDialogTitle">
+    <div id="approvalOverlay" hidden class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="neu-flat rounded-2xl p-6 w-[360px] text-center flex flex-col items-center">
             <span class="material-symbols-outlined text-[40px] text-warning mb-3 animate-pulse">warning</span>
-            <h2 id="approvalDialogTitle" class="text-[16px] font-bold text-on-surface mb-2">Action Approval</h2>
+            <h2 class="text-[16px] font-bold text-on-surface mb-2">Action Approval</h2>
             <p id="approvalContext" class="text-[13px] text-on-surface-variant mb-2"></p>
             <div id="approvalDetail" class="neu-recessed w-full p-2 rounded text-[11px] font-mono text-warning break-all mb-4"></div>
             <div class="flex gap-3 w-full">
@@ -326,4 +326,3 @@
     <script type="module" src="popup.js"></script>
 </body>
 </html>
-

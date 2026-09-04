@@ -93,66 +93,6 @@
         transform: translateX(100%);
         background-color: #305f9f;
     }
-
-    /* Connection Quality Badge */
-    .conn-badge {
-        transition: all 0.3s ease;
-    }
-    .conn-badge.excellent {
-        color: #166534;
-        background: rgba(34, 197, 94, 0.12);
-    }
-    .conn-badge.good {
-        color: #305f9f;
-        background: rgba(48, 95, 159, 0.12);
-    }
-    .conn-badge.fair {
-        color: #92400e;
-        background: rgba(245, 158, 11, 0.12);
-    }
-    .conn-badge.poor {
-        color: #ba1a1a;
-        background: rgba(186, 26, 26, 0.12);
-    }
-    .conn-badge.offline {
-        color: #737781;
-        background: rgba(115, 119, 129, 0.12);
-    }
-
-    /* Disabled States */
-    .neu-btn:disabled, .neu-btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none !important;
-        box-shadow: inset 2px 2px 4px #dce1eb, inset -2px -2px 4px #ffffff !important;
-    }
-    .neu-btn:disabled:hover, .neu-btn-primary:disabled:hover {
-        transform: none !important;
-    }
-
-    /* Focus Rings */
-    .neu-btn:focus-visible, .neu-btn-primary:focus-visible, .nav-btn:focus-visible {
-        outline: 2px solid #305f9f;
-        outline-offset: 2px;
-    }
-    input:focus-visible, select:focus-visible {
-        outline: 2px solid #305f9f;
-        outline-offset: -2px;
-    }
-
-    /* Loading Spinner */
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    .loading-spinner {
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(48, 95, 159, 0.3);
-        border-top-color: #305f9f;
-        border-radius: 50%;
-        animation: spin 0.6s linear infinite;
-        display: inline-block;
-    }
 }
 
 /* Base Body Styles */
@@ -189,6 +129,3 @@ body {
 .tab-content { display: none !important; }
 .tab-content.active { display: flex !important; animation: fadeIn 200ms ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-
-
