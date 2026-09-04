@@ -135,3 +135,10 @@ body {
 .conn-badge.fair { color: #92400e; background: rgba(245, 158, 11, 0.12); }
 .conn-badge.poor { color: #ba1a1a; background: rgba(186, 26, 26, 0.12); }
 .conn-badge.offline { color: #737781; background: rgba(115, 119, 129, 0.12); }
+
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.absolute.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+input#goalInput:focus-visible, input.border-none:focus-visible { outline: none !important; }
+.neu-recessed:focus-within { outline: 2px solid #305f9f; outline-offset: 2px; }

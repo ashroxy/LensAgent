@@ -609,6 +609,7 @@ function formatDuration(ms) {
 }
 
 clearHistoryBtn.addEventListener("click", async () => {
+  if (!confirm("Clear all session history? This cannot be undone.")) return;
   await msg({ type: POPUP_CLEAR_HISTORY, targetTabId: targetTabId || currentPopupTabId });
   historyList.innerHTML = `
     <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant">No past sessions yet.</span></div>`;
