@@ -183,6 +183,7 @@ export class AgentLoop {
       metrics:     this.captureEngine.getMetrics(),
       connection:  this.captureEngine.getConnectionQuality(),
       serverErrors: this._consecutiveServerErrors,
+      activeHitlRequest: this.activeHitlRequest || null,
     };
   }
 
@@ -350,10 +351,12 @@ export class AgentLoop {
           this._log(`[ASK_USER] Skipped degenerate ask (no field target): ${action.question || ""}`, "warning");
           continue;
         }
+        this.activeHitlRequest = { question: action.question || "Need input", suggestedVaultKey: action.vaultKey, correlationId: this.stepCount };
         this.state = AgentState.WAITING_FOR_USER;
         this._broadcastStatus();
-        chrome.runtime.sendMessage({ type: "BG_HITL_PROMPT", payload: { question: action.question || "Need input", suggestedVaultKey: action.vaultKey, correlationId: this.stepCount }});
+        chrome.runtime.sendMessage({ type: "BG_HITL_PROMPT", payload: this.activeHitlRequest });
         const hitlMsg = await new Promise(r => this.hitlResolver = r);
+        this.activeHitlRequest = null;
         this.state = AgentState.RUNNING;
         this._broadcastStatus();
         // Never persist secrets (password/confirm/pin/cvv/otp) to the vault —

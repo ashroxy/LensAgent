@@ -27,7 +27,7 @@ import {
   BG_HITL_PROMPT, BG_APPROVAL_PROMPT, BG_VAULT_DATA,
   AUDIT_FRAME_UPDATE, AUDIT_ACTION_LOG,
   AgentState, DEFAULT_SETTINGS,
-} from "./lib/message-types.js";
+} from "../lib/message-types.js";
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // DOM REFS
@@ -429,6 +429,11 @@ function handleStatusUpdate(p) {
   }
   if (p.connection) setConnectionBadge(p.connection);
   if (p.message) addLog(p.message, p.state === AgentState.ERROR ? "error" : "warning");
+
+  if (p.state === AgentState.WAITING_FOR_USER && p.activeHitlRequest && pendingHitlCorrelationId !== p.activeHitlRequest.correlationId) {
+    showHitlPrompt(p.activeHitlRequest);
+  }
+
   if (p.state === AgentState.IDLE || p.state === AgentState.FINISHED) resetToIdle();
 }
 
@@ -889,7 +894,7 @@ function showVaultMsg(text, type = 'info') {
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HITL (HUMAN-IN-THE-LOOP) CHAT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
 
 function showHitlPrompt(payload) {
   pendingHitlCorrelationId = payload.correlationId;
@@ -900,12 +905,24 @@ function showHitlPrompt(payload) {
   hitlOverlay.hidden = false;
   hitlInput.focus();
   
+  // Set a helpful placeholder based on the key
+  let placeholder = 'Type your answer here...';
   if (pendingHitlVaultKey) {
     hitlVaultKeyLabel.hidden = false;
     hitlVaultKey.textContent = pendingHitlVaultKey;
+    const key = pendingHitlVaultKey.toLowerCase();
+    if (key.includes('date') || key.includes('dob')) placeholder = 'e.g. MM/DD/YYYY';
+    else if (key.includes('phone') || key.includes('mobile')) placeholder = 'e.g. (123) 456-7890';
+    else if (key.includes('email')) placeholder = 'e.g. name@example.com';
+    else if (key.includes('zip') || key.includes('postal')) placeholder = 'e.g. 12345';
+    else if (key.includes('card') && key.includes('num')) placeholder = 'e.g. 4111222233334444';
+    else if (key.includes('cvv') || key.includes('cvc')) placeholder = 'e.g. 123';
+    else if (key.includes('exp')) placeholder = 'e.g. MM/YY';
+    else if (key.includes('name')) placeholder = 'e.g. John Doe';
   } else {
     hitlVaultKeyLabel.hidden = true;
   }
+  hitlInput.placeholder = placeholder;
   
   setState(AgentState.WAITING_FOR_USER);
   addLog(`[HITL] Agent asks: "${payload.question}"`, 'warning');
