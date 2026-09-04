@@ -739,7 +739,7 @@ async function loadVaultUI() {
     vaultForm.innerHTML = "";
     for (const field of VAULT_FIELDS) {
       const wrapper = document.createElement("div");
-      wrapper.className = "flex flex-col gap-xs w-full mb-3";
+      wrapper.className = "flex flex-col gap-2 w-full mb-3";
       
       const label = document.createElement("label");
       label.className = "font-label-md text-label-md text-on-surface-variant ml-2";
