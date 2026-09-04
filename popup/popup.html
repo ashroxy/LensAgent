@@ -8,10 +8,10 @@
     <link href="popup.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 </head>
-<body class="bg-background text-on-surface font-body-md flex flex-col md:flex-row h-screen w-screen overflow-hidden">
+<body class="bg-background text-on-surface font-body-md flex overflow-hidden" style="width: 800px; height: 600px;">
     <!-- SideNavBar (Bottom bar on mobile) -->
-    <nav class="w-full h-16 md:w-[200px] md:h-full bg-surface-container-low border-t md:border-t-0 md:border-r border-outline-variant/10 shadow-sm flex md:flex-col py-2 md:py-6 shrink-0 z-20 order-last md:order-first justify-around md:justify-start">
-        <div class="hidden md:flex px-6 mb-8 items-center gap-3">
+    <nav class="w-[200px] h-full bg-surface-container-low border-r border-outline-variant/10 shadow-sm flex flex-col py-6 shrink-0 z-20">
+        <div class="px-6 mb-8 flex items-center gap-3">
             <div class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-primary">lens</span>
             </div>
@@ -22,20 +22,20 @@
         </div>
         <div class="flex flex-row md:flex-col gap-2 px-3 w-full justify-around md:justify-start flex-1 md:flex-none">
             <button class="nav-btn active flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="agent">
-                <span class="material-symbols-outlined text-[20px] md:text-[24px]">smart_toy</span>
-                <span class="font-body-md text-[10px] md:text-body-md">Agent</span>
+                <span class="material-symbols-outlined text-[24px]">smart_toy</span>
+                <span class="font-body-md text-body-md">Agent</span>
             </button>
             <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="settings">
-                <span class="material-symbols-outlined text-[20px] md:text-[24px]">settings</span>
-                <span class="font-body-md text-[10px] md:text-body-md">Settings</span>
+                <span class="material-symbols-outlined text-[24px]">settings</span>
+                <span class="font-body-md text-body-md">Settings</span>
             </button>
             <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="history">
-                <span class="material-symbols-outlined text-[20px] md:text-[24px]">history</span>
-                <span class="font-body-md text-[10px] md:text-body-md">History</span>
+                <span class="material-symbols-outlined text-[24px]">history</span>
+                <span class="font-body-md text-body-md">History</span>
             </button>
             <button class="nav-btn flex items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left flex-col md:flex-row" data-tab="vault">
-                <span class="material-symbols-outlined text-[20px] md:text-[24px]">lock</span>
-                <span class="font-body-md text-[10px] md:text-body-md">Vault</span>
+                <span class="material-symbols-outlined text-[24px]">lock</span>
+                <span class="font-body-md text-body-md">Vault</span>
             </button>
         </div>
     </nav>
@@ -88,7 +88,7 @@
                 <!-- Dashboard Grid -->
                 <div class="flex flex-col gap-4">
                     <!-- Video Feeds (2x1) -->
-                    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2">
+                    <div class="grid gap-4 grid-cols-2">
                         <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
                             <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button></div>
                             <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
@@ -111,7 +111,7 @@
 
                     <!-- Metrics (1x6) -->
                     <div class="neu-flat rounded-2xl p-4">
-                        <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+                        <div class="grid gap-3 grid-cols-7">
                             <div class="neu-recessed rounded-xl p-3 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Steps</span>
                                 <span class="font-mono text-[14px] font-bold text-primary"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
