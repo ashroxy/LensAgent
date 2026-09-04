@@ -1,0 +1,33 @@
+{
+  "devDependencies": {
+    "acorn": "^8.18.0",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^3.4.19"
+  },
+  "name": "sih-171",
+  "version": "1.0.0",
+  "description": "Build a privacy-preserving vision agent that runs in the browser. A local Vision Transformer reads the user's screen, sanitizes sensitive/PII data using DOM tags or other methods, and sends only anonymized structural data to a server. The server processes the sanitized context and returns actionable browser commands (click, type, scroll) that the local client executes autonomously.",
+  "main": "tailwind.config.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashroxy/LensAgent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ashroxy/LensAgent/issues"
+  },
+  "homepage": "https://github.com/ashroxy/LensAgent#readme",
+  "dependencies": {
+    "eslint": "^10.9.1",
+    "playwright": "^1.62.1"
+  }
+}

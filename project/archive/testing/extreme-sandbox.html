@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LensAgent STRESS TEST Sandbox</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* A fast-moving animation to defeat the delta-frame hash and force 30fps capturing */
+    .spinner {
+      animation: spin 0.5s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-300 font-sans p-8">
+
+  <div class="max-w-6xl mx-auto space-y-8">
+    
+    <!-- Header with Animation -->
+    <header class="flex justify-between items-center bg-slate-900 p-6 rounded-xl border border-slate-800">
+      <div>
+        <h1 class="text-3xl font-bold text-white mb-2">🔥 Extreme Stress Test</h1>
+        <p class="text-slate-400">Testing DOM truncation, Delta-Frame hash defeat, and Payload limits.</p>
+      </div>
+      <!-- This spinning box guarantees every single frame is different, forcing 30fps capture load -->
+      <div class="w-16 h-16 border-4 border-t-green-500 border-r-blue-500 border-b-red-500 border-l-yellow-500 rounded-full spinner"></div>
+    </header>
+
+    <div class="grid grid-cols-2 gap-8">
+      
+      <!-- Deep Nesting Test -->
+      <section class="bg-slate-900 p-6 rounded-xl border border-slate-800">
+        <h2 class="text-xl font-semibold text-white mb-4">Deep DOM Nesting (A11y Test)</h2>
+        <div id="deep-dom-container" class="text-xs p-4 bg-slate-950 rounded border border-slate-800 overflow-x-auto">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Event Logger -->
+      <section class="bg-slate-900 p-6 rounded-xl border border-slate-800 flex flex-col">
+        <h2 class="text-xl font-semibold text-white mb-4">CDP Event Logger</h2>
+        <div id="eventLog" class="flex-1 bg-black p-4 rounded font-mono text-xs overflow-y-auto h-64 border border-slate-700">
+          <div class="text-green-500">[System] Awaiting interactions...</div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Massive Node Grid -->
+    <section class="bg-slate-900 p-6 rounded-xl border border-slate-800">
+      <h2 class="text-xl font-semibold text-white mb-4 flex justify-between items-center">
+        <span>Massive Grid (Token Limit Test)</span>
+        <span class="text-sm bg-slate-800 px-3 py-1 rounded text-slate-400">1,000 DOM Nodes</span>
+      </h2>
+      <p class="text-sm text-slate-500 mb-4">
+        This grid contains 1,000 interactive buttons. If your agent does not truncate the A11y and DOM trees, the JSON payload will be 50MB+ and crash the VLM. LensAgent should cap this at 150/200 nodes safely.
+      </p>
+      <div id="massive-grid" class="grid grid-cols-10 gap-2 h-96 overflow-y-auto p-4 bg-slate-950 rounded border border-slate-800">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // 1. Generate Deeply Nested DOM
+    const deepContainer = document.getElementById('deep-dom-container');
+    let currentLevel = deepContainer;
+    for (let i = 0; i < 30; i++) {
+      const div = document.createElement('div');
+      div.className = 'ml-2 p-1 border-l border-slate-700 hover:bg-slate-800 cursor-pointer';
+      div.textContent = `Depth ${i}`;
+      currentLevel.appendChild(div);
+      currentLevel = div;
+    }
+    const deepBtn = document.createElement('button');
+    deepBtn.className = 'mt-2 bg-blue-600 text-white px-2 py-1 rounded text-xs';
+    deepBtn.textContent = 'Nested Target';
+    currentLevel.appendChild(deepBtn);
+
+    // 2. Generate Massive Node Grid
+    const massiveGrid = document.getElementById('massive-grid');
+    for (let i = 1; i <= 1000; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs py-2 rounded transition-colors';
+      btn.textContent = `BTN-${i}`;
+      btn.setAttribute('aria-label', `Grid Button ${i}`);
+      massiveGrid.appendChild(btn);
+    }
+
+    // 3. Logger
+    const log = document.getElementById('eventLog');
+    document.addEventListener('click', (e) => {
+      const msg = document.createElement('div');
+      msg.className = 'text-blue-400 mt-1';
+      const text = e.target.textContent || e.target.tagName;
+      msg.textContent = `[${new Date().toISOString().slice(11,19)}] CLICK -> ${text.substring(0,20)}`;
+      log.prepend(msg);
+    });
+  </script>
+</body>
+</html>

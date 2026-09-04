@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LensAgent Integration Test Suite</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f4f4f5; color: #18181b; margin: 0; padding: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; gap: 2rem; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e4e4e7; padding-bottom: 1rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-weight: 600; font-size: 0.875rem; background: #e4e4e7; }
+        .status-badge.running { background: #dcfce7; color: #166534; }
+        .status-badge.error { background: #fee2e2; color: #991b1b; }
+        input, select { padding: 8px 12px; border: 1px solid #d4d4d8; border-radius: 4px; width: 100%; box-sizing: border-box; margin-bottom: 1rem; }
+        button { background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 500; }
+        button:hover { background: #1d4ed8; }
+        .mock-app { border: 1px solid #d4d4d8; border-radius: 4px; padding: 1rem; background: #fafafa; margin-top: 1rem; min-height: 200px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e4e4e7; }
+        #logs { background: #18181b; color: #a1a1aa; padding: 1rem; border-radius: 4px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.875rem; }
+        .log-info { color: #60a5fa; }
+        .log-act { color: #34d399; }
+        .log-err { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1 style="margin:0 0 4px 0;">LensAgent Test Suite</h1>
+                <p style="margin:0; color:#71717a;">Extension Integration Environment</p>
+            </div>
+            <div>
+                <span class="status-badge" id="extStatus">Waiting for Extension...</span>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <!-- Mock CRM Environment -->
+            <div class="card">
+                <h2>Mock CRM Environment</h2>
+                <p>This section simulates a target web application that the agent interacts with.</p>
+                
+                <div class="mock-app" id="mockApp">
+                    <h3>Update Customer Record</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label>Customer Name</label>
+                            <input type="text" id="custName" value="John Doe">
+                        </div>
+                        <div>
+                            <label>Customer ID</label>
+                            <input type="text" id="custId" value="CUST-8992" readonly style="background:#f4f4f5">
+                        </div>
+                    </div>
+                    
+                    <label>Billing Credit Card (Private)</label>
+                    <input type="text" id="ccInput" placeholder="xxxx-xxxx-xxxx-xxxx" data-sensitive="true">
+                    
+                    <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                        <button id="saveBtn" style="background: #166534;">Save Record</button>
+                        <button id="clearBtn" style="background: #e4e4e7; color: #18181b;">Clear</button>
+                    </div>
+
+                    <div id="toast" style="display:none; margin-top:1rem; padding:0.5rem; background:#dcfce7; color:#166534; border-radius:4px; font-size:0.875rem;">
+                        Record saved successfully!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Controller -->
+            <div class="card">
+                <h2>Test Controller</h2>
+                <div style="margin-bottom: 1rem;">
+                    <label>Simulate Goal</label>
+                    <input type="text" id="testGoal" value="Update customer John Doe's credit card to a new visa">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button id="pingExtBtn">Ping Extension</button>
+                    <button id="simActionBtn" style="background:#0891b2;">Inject Mock Action</button>
+                </div>
+
+                <h3 style="margin-top: 2rem;">Activity Logs</h3>
+                <div id="logs">
+                    <!-- Logs go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const extStatus = document.getElementById('extStatus');
+        const logs = document.getElementById('logs');
+
+        function addLog(msg, type='info') {
+            const div = document.createElement('div');
+            const time = new Date().toISOString().split('T')[1].substring(0,8);
+            div.innerHTML = <span style="color:#71717a">[]</span> <span class="log-"></span>;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // Mock UI Logic
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const cc = document.getElementById('ccInput').value;
+            addLog(Mock App: Attempted to save record with CC: , 'act');
+            document.getElementById('toast').style.display = 'block';
+            setTimeout(() => document.getElementById('toast').style.display = 'none', 3000);
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            document.getElementById('ccInput').value = '';
+            document.getElementById('custName').value = '';
+            addLog('Mock App: Form cleared');
+        });
+
+        // Extension Communication
+        document.getElementById('pingExtBtn').addEventListener('click', () => {
+            addLog('Ping: Checking if content script is injected...', 'info');
+            // In a real environment, we'd use CustomEvent or postMessage to talk to content script
+            if (document.documentElement.hasAttribute('data-lensagent-injected')) {
+                extStatus.textContent = "Extension Active";
+                extStatus.className = "status-badge running";
+                addLog('Success: Content script detected.', 'success');
+            } else {
+                extStatus.textContent = "Extension Not Found";
+                extStatus.className = "status-badge error";
+                addLog('Error: Content script not found on this page.', 'err');
+            }
+        });
+
+        document.getElementById('simActionBtn').addEventListener('click', () => {
+            addLog('Simulating agent setting input value via Content Script...', 'act');
+            const input = document.getElementById('ccInput');
+            input.value = "4111222233334444"; // mock agent action
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Highlight element to simulate agent action visualization
+            input.style.outline = "2px solid #8b5cf6";
+            input.style.boxShadow = "0 0 10px rgba(139, 92, 246, 0.5)";
+            setTimeout(() => {
+                input.style.outline = "";
+                input.style.boxShadow = "";
+            }, 1000);
+        });
+
+        // Auto-ping on load
+        setTimeout(() => document.getElementById('pingExtBtn').click(), 1000);
+    </script>
+</body>
+</html>

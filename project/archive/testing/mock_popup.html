@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    const vaultData = { full_name:'John Doe', email:'john@example.com', phone:'+919876543210', address:'123 Main St', city:'Mumbai', state:'Maharashtra', pincode:'400001', dob:'1990-01-01', gender:'Male' };
+    const VAULT=Object.assign({},vaultData);window.__TEST_VAULT=VAULT;window.chrome={runtime:{id:'t',getURL:p=>'chrome-extension://t/'+p,lastError:null,sendMessage:(m,cb)=>{let r={status:'OK'};if(m.type==='POPUP_VAULT_GET')r=Object.assign({},VAULT);else if(m.type==='POPUP_VAULT_SET')VAULT[m.key]=m.value;else if(m.type==='POPUP_VAULT_DELETE')delete VAULT[m.key];else if(m.type==='POPUP_VAULT_FLUSH')Object.keys(VAULT).forEach(k=>delete VAULT[k]);else if(m.type==='POPUP_GET_HISTORY')r=[{goal:'A',state:'FINISHED',steps:3,durationMs:5000,startedAt:Date.now()}];else if(m.type==='POPUP_GET_SETTINGS')r={backendUrl:'http://localhost:8000',maxSteps:30,captureQuality:75,serverTimeoutMs:10000,stabilizeDelayMs:250,humanizeInputs:true,enableDeltaFrames:true,enableAuditStream:true};else if(m.type==='POPUP_GET_STATUS')r={state:'IDLE'};else if(m.type==='POPUP_EXPORT_LOG')r={text:'log'};if(typeof cb==='function')cb(r);},onMessage:{addListener:()=>{},removeListener:()=>{}}},tabs:{query:(q,cb)=>cb([{id:1,title:'T',url:'https://example.com',active:false}]),create:()=>{},get:(id,cb)=>cb({id,url:'https://example.com'})},storage:{local:{get:(k,cb)=>{const o={};if(typeof k==='string')o[k]=VAULT[k];else if(Array.isArray(k))k.forEach(x=>o[x]=VAULT[x]);else if(k&&typeof k==='object')Object.entries(k).forEach(([x,d])=>o[x]=VAULT[x]!==undefined?VAULT[x]:d);else Object.assign(o,VAULT);cb(o);},set:(o,cb)=>{Object.assign(VAULT,o);cb&&cb();},remove:(k,cb)=>{if(typeof k==='string')delete VAULT[k];else k.forEach(x=>delete VAULT[x]);cb&&cb();}},session:{get:(k,cb)=>cb({}),set:(o,cb)=>cb&&cb(),remove:(k,cb)=>cb&&cb(),clear:()=>{}}},action:{setBadgeText:()=>{},setBadgeBackgroundColor:()=>{}},debugger:{attach:()=>{},detach:()=>{},sendCommand:()=>{},onEvent:{addListener:()=>{},removeListener:()=>{}},onDetach:{addListener:()=>{},removeListener:()=>{}}},alarms:{create:()=>{},onAlarm:{addListener:()=>{}}}};
+  </script>
+  <style>
+    body { width: 400px; height: 600px; overflow: hidden; margin: 0; }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+  <!-- Oh wait, if I use an iframe, the chrome API might not be available in the iframe. -->
+  <!-- I will just fetch popup.html and document.write it! -->
+  <script>
+    fetch('../popup/popup.html').then(r=>r.text()).then(html => {
+      // Fix relative paths for CSS/JS
+      html = html.replace(/src="popup\.js"/, 'src="../popup/popup.js"');
+      html = html.replace(/href="popup\.css"/, 'href="../popup/popup.css"');
+      html = html.replace(/href="input\.css"/, 'href="../popup/input.css"');
+      document.open();
+      document.write(html);
+      document.close();
+    });
+  </script>
+</body>
+</html>

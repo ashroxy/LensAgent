@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "LensAgent - Privacy-Preserving Visual Browser Agent",
+  "short_name": "LensAgent",
+  "version": "1.0.0",
+  "offline_enabled": true,
+  "description": "SIH-171: On-device WebGPU visual perception, Indian PII redaction, and autonomous CDP browser execution with zero raw data egress.",
+
+  "minimum_chrome_version": "118",
+
+  "permissions": [
+    "debugger",
+    "offscreen",
+    "activeTab",
+    "tabs",
+    "storage",
+    "alarms",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "<all_urls>",
+    "https://huggingface.co/*",
+    "https://cdn-lfs.huggingface.co/*"
+  ],
+
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'wasm-unsafe-eval'; connect-src 'none'; img-src 'self' data: blob:; object-src 'none'"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "models/*",
+        "lib/ort/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  }
+}
+
