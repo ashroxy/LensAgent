@@ -490,8 +490,41 @@ export class ActionExecutor {
           // --- TEXT-like: fill the value ---
           let valToSet = value;
           if (el.type === 'date') {
-             const d = new Date(value);
-             if (!isNaN(d)) valToSet = d.toISOString().split('T')[0];
+            const parseDateInput = (val) => {
+              if (!val) return '';
+              const s = String(val).trim();
+              if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+              let m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+              if (m) {
+                return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+              }
+              m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+              if (m) {
+                const p1 = parseInt(m[1], 10), p2 = parseInt(m[2], 10), y = m[3];
+                let d, mo;
+                if (p1 > 12) {
+                  d = String(p1).padStart(2, '0');
+                  mo = String(p2).padStart(2, '0');
+                } else if (p2 > 12) {
+                  mo = String(p1).padStart(2, '0');
+                  d = String(p2).padStart(2, '0');
+                } else {
+                  d = String(p1).padStart(2, '0');
+                  mo = String(p2).padStart(2, '0');
+                }
+                return `${y}-${mo}-${d}`;
+              }
+              const ts = Date.parse(s);
+              if (!isNaN(ts)) {
+                const dt = new Date(ts);
+                const y = dt.getFullYear();
+                const mo = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                return `${y}-${mo}-${d}`;
+              }
+              return s;
+            };
+            valToSet = parseDateInput(value);
           }
           const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
           const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;

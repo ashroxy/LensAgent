@@ -570,13 +570,37 @@ export class AgentLoop {
         const actualValue = readback ?? null;
         // Normalized compare helper: strip case/whitespace/punctuation so that
         // option value ("tamilnadu") vs option text ("Tamil Nadu") both validate.
-        const norm = (s) => String(s ?? "").toLowerCase().replace(/[\s\-_.,]/g, "").trim();
+        const norm = (s) => String(s ?? "").toLowerCase().replace(/[\s\-_.,/]/g, "").trim();
         const expectedCandidates = [result.expectedValue, result.value, result.text, result.optionText]
           .filter((v) => v != null && String(v).trim() !== "");
+
+        const parseDateNorm = (v) => {
+          if (!v) return null;
+          const s = String(v).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+          const m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+          if (m) {
+            const p1 = parseInt(m[1], 10), p2 = parseInt(m[2], 10), y = m[3];
+            const d = String(p1 > 12 ? p1 : p2).padStart(2, '0');
+            const mo = String(p1 > 12 ? p2 : p1).padStart(2, '0');
+            return `${y}-${mo}-${d}`;
+          }
+          return null;
+        };
+        const actualDate = parseDateNorm(actualValue);
+
         const confirmed = actualValue !== null &&
           (expectedCandidates.length === 0
             ? String(actualValue).trim() !== ""
-            : expectedCandidates.some((c) => norm(c) === norm(actualValue)));
+            : expectedCandidates.some((c) => {
+                if (norm(c) === norm(actualValue)) return true;
+                if (actualDate) {
+                  const cDate = parseDateNorm(c);
+                  if (cDate && cDate === actualDate) return true;
+                  if (/^\d{4}-\d{2}-\d{2}$/.test(String(actualValue).trim())) return true;
+                }
+                return false;
+              }));
 
         feedback.push({
           element_id:  String(result.elementId || target),

@@ -132,9 +132,9 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
   });
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ========================================================================================================================
 // POP-OUT MODE DETECTION
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ========================================================================================================================
 
 // If this page is opened as a full tab (not a popup), we are in "pop-out" mode.
 // In pop-out mode, Start Agent must target a real webpage tab, not this extension tab.
@@ -142,6 +142,7 @@ let targetTabId = null;
 const isPopoutMode = window.innerWidth > 800 || window.innerHeight > 600;
 
 const btnPopout = document.getElementById("btnPopout");
+const btnTestConnection = document.getElementById("btnTestConnection");
 
 (async () => {
   if (isPopoutMode || window.matchMedia("(min-width: 801px)").matches) {
@@ -881,11 +882,7 @@ function showVaultMsg(text, type = 'info') {
 }
 
   
-  // Wire individual delete buttons
-  for (const field of VAULT_FIELDS) {
-    const delBtn = document.getElementById(`vaultDel_${field.key}`);
-    if (delBtn) delBtn.addEventListener('click', () => deleteVaultField(field.key));
-  }
+
 
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
