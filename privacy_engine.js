@@ -3,6 +3,7 @@
  * 
  * Provides:
  * 1. sanitizeViewport: Combines DOM ground-truth PII with Member 1's ML detections.
+ *    Supports 'placeholder' jargon masking (e.g. [REDACTED_PASSWORD], ••••••) or hard 'blackout'.
  * 2. validatePayload: Scans outgoing payloads for unmasked PII (Aadhaar, PAN, Cards, Passwords, etc.)
  */
 
@@ -10,6 +11,7 @@ export class PrivacyEngine {
   constructor(options = {}) {
     this.enableStrictZeroLeakage = options.enableStrictZeroLeakage ?? true;
     this.boxPadding = options.boxPadding ?? 8;
+    this.maskStyle = options.maskStyle ?? 'placeholder'; // 'placeholder' | 'blackout'
   }
 
   // Regex patterns for sensitive Indian & Global PII
@@ -20,6 +22,26 @@ export class PrivacyEngine {
     PHONE: /\b(?:\+91[ -]?)?[6-9]\d{9}\b/,
     EMAIL: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/
   };
+
+  /**
+   * Generates realistic placeholder/jargon text for given category
+   * @param {string} category 
+   * @param {string} label 
+   * @returns {string} Placeholder jargon string
+   */
+  static getPlaceholderText(category = '', label = '') {
+    const cat = (category || label || '').toUpperCase();
+    if (cat.includes('PASSWORD')) return '••••••••••••';
+    if (cat.includes('CARD') || cat.includes('CC')) return '[REDACTED_CARD_****]';
+    if (cat.includes('AADHAAR')) return '[REDACTED_AADHAAR_****]';
+    if (cat.includes('PAN')) return '[REDACTED_PAN_****]';
+    if (cat.includes('EMAIL')) return '[REDACTED_EMAIL@DOMAIN]';
+    if (cat.includes('PHONE') || cat.includes('TEL')) return '[REDACTED_PHONE_+91]';
+    if (cat.includes('FACE') || cat.includes('AVATAR')) return '[REDACTED_AVATAR]';
+    if (cat.includes('NAME')) return '[REDACTED_NAME_***]';
+    if (cat.includes('CVV')) return '•••';
+    return `[REDACTED_${cat.replace(/\s+/g, '_') || 'PII'}]`;
+  }
 
   /**
    * Scans DOM for visible sensitive elements
@@ -97,13 +119,10 @@ export class PrivacyEngine {
 
     // 3. Load image into Canvas
     let imageBitmap;
-    
     if (typeof rawScreenshotBase64 === 'string') {
-      // Re-attach data URI prefix if it's a raw base64 string from offscreen.js
       const dataUrl = rawScreenshotBase64.startsWith('data:') 
         ? rawScreenshotBase64 
         : `data:image/jpeg;base64,${rawScreenshotBase64}`;
-        
       const imgBlob = await (await fetch(dataUrl)).blob();
       imageBitmap = await createImageBitmap(imgBlob);
     } else {
@@ -119,12 +138,10 @@ export class PrivacyEngine {
       canvas.width = imageBitmap.width;
       canvas.height = imageBitmap.height;
     }
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     ctx.drawImage(imageBitmap, 0, 0);
-    imageBitmap.close(); // CRITICAL: Free GPU memory immediately
 
-    // 4. Draw Solid #000000 blackout boxes with padding
-    ctx.fillStyle = '#000000';
+    // 4. Render Redaction Masks (Placeholder Jargon Text or Blackout)
     for (const item of allBoxes) {
       const { x, y, width, height } = item.boundingBox;
       const pad = this.boxPadding;
@@ -133,12 +150,44 @@ export class PrivacyEngine {
       const pw = Math.min(canvas.width - px, width + pad * 2);
       const ph = Math.min(canvas.height - py, height + pad * 2);
 
-      ctx.fillRect(px, py, pw, ph);
+      const placeholderText = PrivacyEngine.getPlaceholderText(item.category, item.redactionLabel);
+
+      if (this.maskStyle === 'placeholder') {
+        // Step A: Draw stylized dark container badge box
+        ctx.fillStyle = '#0f172a'; // Deep slate background to completely obscure underlying pixels
+        ctx.fillRect(px, py, pw, ph);
+
+        // Step B: Draw subtle border highlight
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px, py, pw, ph);
+
+        // Step C: Render centered placeholder/jargon text
+        const fontSize = Math.max(10, Math.min(13, Math.floor(ph * 0.45)));
+        ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace`;
+        ctx.fillStyle = '#38bdf8'; // Cyan text
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px + 2, py + 2, Math.max(0, pw - 4), Math.max(0, ph - 4));
+        ctx.clip(); // Prevent text overflow outside box boundary
+
+        ctx.fillText(placeholderText, px + pw / 2, py + ph / 2);
+        ctx.restore();
+
+      } else {
+        // Fallback: Solid Blackout
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(px, py, pw, ph);
+      }
 
       tokenMap.push({
         id: item.id,
         category: item.category,
         redactionLabel: item.redactionLabel,
+        placeholder: placeholderText,
         boundingBox: { x: px, y: py, width: pw, height: ph }
       });
     }
@@ -146,17 +195,16 @@ export class PrivacyEngine {
     // 5. Export as WebP / JPEG base64
     let sanitizedImage;
     if (canvas.convertToBlob) {
-      const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
+      const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
       sanitizedImage = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
     } else {
-      sanitizedImage = canvas.toDataURL('image/jpeg', 0.85);
+      sanitizedImage = canvas.toDataURL('image/webp', 0.85);
     }
     
-    // Strip the prefix so we return pure base64
     if (sanitizedImage.includes(',')) {
       sanitizedImage = sanitizedImage.split(',')[1];
     }
@@ -170,7 +218,8 @@ export class PrivacyEngine {
         sanitizationLatencyMs: latency,
         maskedItemsCount: tokenMap.length,
         domBoxesCount: domBoxes.length,
-        mlBoxesCount: customMlBoxes.length
+        mlBoxesCount: customMlBoxes.length,
+        maskStyle: this.maskStyle
       }
     };
   }
@@ -183,10 +232,8 @@ export class PrivacyEngine {
    */
   validatePayload(payload) {
     if (!this.enableStrictZeroLeakage) return true;
-    if (payload == null) return true;
 
     const payloadString = (typeof payload === 'string') ? payload : JSON.stringify(payload);
-    if (!payloadString) return true;
 
     for (const [key, regex] of Object.entries(PrivacyEngine.PII_PATTERNS)) {
       const match = payloadString.match(regex);
@@ -198,3 +245,5 @@ export class PrivacyEngine {
     return true;
   }
 }
+
+

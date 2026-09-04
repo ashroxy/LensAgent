@@ -381,6 +381,11 @@ File: `offscreen/offscreen.js` â†’ function `detectAndRedactPII(ctx, width, heig
 - Created offscreen document with clearly marked integration points for Member 2 (WebGPU Vision) and Member 3 (Privacy Engine)
 - Defined integration contract: exact message types, payload shapes, and function signatures for teammate modules
 
+### 2026-09-04 v6.0 - WebGPU Transformers & Production UI (Member 1 & Teammates)
+- **Production UI Finalization**: Completed frontend audit. Added mobile-friendly responsive bottom-bar navigation, empty state handling (Awaiting Signal overlays for video feeds, Waiting for execution to start... for terminal), integrated dynamic connection badges and settings panel UI (Capture Quality, Stabilize Delay), and built a fully functional Vault tab with individual field deletion.
+- **Vision Model Upgrade**: Migrated from custom ONNX YOLO to Xenova/owlvit-base-patch16 zero-shot object detection powered by Transformers.js in WebGPU. Handled dynamically via dist/offscreen.bundle.js.
+- **Enhanced Privacy Engine**: Added sophisticated visual "placeholder" jargon masking for redacted elements (e.g. [REDACTED_AVATAR], ••••••••••••, [REDACTED_CARD_****]) using stylized slate/cyan canvas rendering. Upgraded output encoding to image/webp.
+
 ### 2026-08-30 v5.2 - Member 3 Privacy Engine Integration
 - **Integrated `offscreen/privacy_engine.js`** (Member 3): Real PII detection and canvas redaction replacing the mock stub. Handles Aadhaar, PAN, Indian phone, credit card, email, UPI, passport, driving licence, PERSON NER, and ISRO/DRDO CONFIDENTIAL NER patterns.
 - **Integrated `offscreen/vault_manager.js`** (Member 3, `SessionVaultManager`): Session-scoped in-RAM bidirectional tokenizer. Converts observed page PII to `[SYS_PAN_01]` aliases before the LLM sees them. Distinct from user identity `lib/vault.js` (`<VAULT_EMAIL>` tokens).
@@ -390,6 +395,7 @@ File: `offscreen/offscreen.js` â†’ function `detectAndRedactPII(ctx, width, heig
 - **Context-Aware Confidence Scoring**: False positive suppression using Â±50 character context windows and domain-specific positive/negative keyword dictionaries.
 - **Zero-Leakage Payload Validator**: `validatePayload()` throws on any residual unmasked PII in strict mode (fail-closed).
 - Fixed ES module compatibility (`export class`) across all Member 3 files.
+
 
 
 
