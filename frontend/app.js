@@ -725,144 +725,140 @@ document.addEventListener("keydown", (e) => {
 // VAULT MANAGEMENT
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-const VAULT_FIELDS = [
-  { key: 'full_name', label: 'Full Name',  placeholder: 'John Doe', type: 'text' },
-  { key: 'email',     label: 'Email',      placeholder: 'john@example.com', type: 'email' },
-  { key: 'phone',     label: 'Phone',      placeholder: '+91 98765 43210', type: 'tel' },
-  { key: 'address',   label: 'Address',    placeholder: '123 Main Street', type: 'text' },
-  { key: 'city',      label: 'City',       placeholder: 'Mumbai', type: 'text' },
-  { key: 'state',     label: 'State',      placeholder: 'Maharashtra', type: 'text' },
-  { key: 'pincode', label: 'Pincode', placeholder: '400001', type: 'number' },
-  { key: 'dob',       label: 'Date of Birth', placeholder: '', type: 'date' },
-  { key: 'gender',    label: 'Gender',     placeholder: 'Select Gender', type: 'select' },
-];
+let currentVaultData = {};
 
 async function loadVaultUI() {
   const data = await msg({ type: POPUP_VAULT_GET });
-  const vaultForm = document.getElementById("vaultForm");
-  if (vaultForm) {
-    vaultForm.innerHTML = "";
-    for (const field of VAULT_FIELDS) {
-      const wrapper = document.createElement("div");
-      wrapper.className = "flex flex-col gap-2 w-full mb-3";
-      
-      const label = document.createElement("label");
-      label.className = "font-label-md text-label-md text-on-surface-variant ml-2";
-      label.textContent = field.label;
-      
-      const inner = document.createElement("div");
-      inner.className = "relative flex items-center w-full";
-      
-      let input;
-      if (field.type === "select") {
-        input = document.createElement("select");
-        input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none appearance-none bg-transparent cursor-pointer";
-        const opt1 = document.createElement("option"); opt1.value = ""; opt1.textContent = field.placeholder;
-        const opt2 = document.createElement("option"); opt2.value = "Male"; opt2.textContent = "Male";
-        const opt3 = document.createElement("option"); opt3.value = "Female"; opt3.textContent = "Female";
-        const opt4 = document.createElement("option"); opt4.value = "Other"; opt4.textContent = "Other";
-        input.appendChild(opt1); input.appendChild(opt2); input.appendChild(opt3); input.appendChild(opt4);
-        input.id = `vault_${field.key}`;
-      } else {
-        input = document.createElement("input");
-        input.type = field.type;
-        input.placeholder = field.placeholder;
-        input.id = `vault_${field.key}`;
-        input.className = "neu-recessed w-full rounded-xl px-4 py-3 text-body-md text-primary font-bold border-none outline-none pr-12";
-      }
-      
-      if (field.type === "select") {
-        input.style.appearance = "none";
-        input.style.webkitAppearance = "none";
-        input.style.mozAppearance = "none";
-      }
-
-      inner.appendChild(input);
-
-      if (field.type === "select") {
-        const icon = document.createElement("span");
-        icon.className = "material-symbols-outlined text-on-surface-variant";
-        icon.style.cssText = "position: absolute; right: 40px; pointer-events: none;";
-        icon.textContent = "expand_more";
-        inner.appendChild(icon);
-      }
-      
-      const delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.id = `vaultDel_${field.key}`;
-      delBtn.className = "absolute right-2 w-8 h-8 rounded-full flex items-center justify-center text-error opacity-50 hover:opacity-100 hover:bg-error/10 transition-all";
-      delBtn.innerHTML = '<span class="material-symbols-outlined text-[16px]">delete</span>';
-      delBtn.addEventListener("click", () => deleteVaultField(field.key));
-      inner.appendChild(delBtn);
-
-      if (field.key === 'pincode' || field.type === 'tel') {
-        input.addEventListener('input', function() {
-          this.value = this.value.replace(/[^0-9+\-\s]/g, '');
-        });
-      }
-      
-      wrapper.appendChild(label);
-      wrapper.appendChild(inner);
-      vaultForm.appendChild(wrapper);
-    }
+  currentVaultData = data || {};
+  const vaultList = document.getElementById("vaultList");
+  if (!vaultList) return;
+  vaultList.innerHTML = "";
+  
+  const entries = Object.entries(currentVaultData);
+  if (entries.length === 0) {
+      vaultList.innerHTML = `<div class="text-center text-on-surface-variant text-[12px] py-4">Vault is empty.</div>`;
   }
-  populateVaultUI(data || {});
-}
 
-function populateVaultUI(vaultData) {
-  for (const field of VAULT_FIELDS) {
-    const input = document.getElementById(`vault_${field.key}`);
-    if (input && vaultData[field.key]) {
-      input.value = vaultData[field.key];
-    }
+  for (const [key, value] of entries) {
+    const card = document.createElement("div");
+    card.className = "neu-recessed rounded-xl p-3 flex justify-between items-center group";
+    
+    const leftCol = document.createElement("div");
+    leftCol.className = "flex flex-col overflow-hidden mr-2 w-full";
+    
+    const keyEl = document.createElement("span");
+    keyEl.className = "text-[10px] text-outline font-bold uppercase truncate";
+    keyEl.textContent = key;
+    
+    const valContainer = document.createElement("div");
+    valContainer.className = "flex items-center gap-2 mt-1 w-full";
+    
+    const valEl = document.createElement("input");
+    valEl.type = "password";
+    valEl.value = value;
+    valEl.readOnly = true;
+    valEl.className = "bg-transparent border-none outline-none text-body-md text-primary font-bold w-full";
+    valEl.id = `vault_val_${key}`;
+
+    const toggleEyeBtn = document.createElement("button");
+    toggleEyeBtn.className = "text-on-surface-variant hover:text-primary transition-colors focus:outline-none shrink-0";
+    toggleEyeBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">visibility</span>`;
+    toggleEyeBtn.onclick = () => {
+        if (valEl.type === "password") {
+            valEl.type = "text";
+            toggleEyeBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">visibility_off</span>`;
+        } else {
+            valEl.type = "password";
+            toggleEyeBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">visibility</span>`;
+        }
+    };
+
+    valContainer.appendChild(valEl);
+    valContainer.appendChild(toggleEyeBtn);
+    
+    leftCol.appendChild(keyEl);
+    leftCol.appendChild(valContainer);
+
+    const rightCol = document.createElement("div");
+    rightCol.className = "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "w-8 h-8 rounded-lg neu-btn-primary text-primary flex items-center justify-center hidden";
+    saveBtn.innerHTML = `<span class="material-symbols-outlined text-[14px]">save</span>`;
+    
+    const editBtn = document.createElement("button");
+    editBtn.className = "w-8 h-8 rounded-lg neu-btn flex items-center justify-center text-on-surface-variant hover:text-primary";
+    editBtn.innerHTML = `<span class="material-symbols-outlined text-[14px]">edit</span>`;
+    
+    editBtn.onclick = () => {
+        valEl.readOnly = false;
+        valEl.type = "text";
+        valEl.focus();
+        valEl.className = "neu-flat rounded-md px-2 py-1 text-body-sm text-primary font-bold w-full border-none outline-none";
+        editBtn.classList.add("hidden");
+        saveBtn.classList.remove("hidden");
+        rightCol.classList.remove("opacity-0", "group-hover:opacity-100"); // Keep visible
+    };
+    
+    saveBtn.onclick = async () => {
+        const newVal = valEl.value.trim();
+        if (newVal) {
+            await msg({ type: POPUP_VAULT_SET, key, value: newVal });
+            showVaultMsg('Item updated', 'success');
+        } else {
+            await msg({ type: POPUP_VAULT_DELETE, key });
+            showVaultMsg('Item deleted', 'info');
+        }
+        loadVaultUI();
+    };
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "w-8 h-8 rounded-lg neu-btn flex items-center justify-center text-error hover:text-error";
+    delBtn.innerHTML = `<span class="material-symbols-outlined text-[14px]">delete</span>`;
+    delBtn.onclick = async () => {
+        await msg({ type: POPUP_VAULT_DELETE, key });
+        showVaultMsg('Item deleted', 'info');
+        loadVaultUI();
+    };
+
+    rightCol.appendChild(editBtn);
+    rightCol.appendChild(saveBtn);
+    rightCol.appendChild(delBtn);
+
+    card.appendChild(leftCol);
+    card.appendChild(rightCol);
+
+    vaultList.appendChild(card);
   }
-  // Update count (based on visible fields)
-  updateVaultCountLocally();
-}
-
-function updateVaultCountLocally() {
-  const filled = VAULT_FIELDS.filter((f) => {
-    const input = document.getElementById(`vault_${f.key}`);
-    return input && input.value && input.value.trim() !== '';
-  }).length;
+  
   const countEl = document.getElementById('vaultFilledCount');
-  if (countEl) countEl.textContent = filled;
-}
-
-async function saveVault() {
-  for (const field of VAULT_FIELDS) {
-    const input = document.getElementById(`vault_${field.key}`);
-    if (!input) continue;
-    const raw = input.value;
-    if (raw && raw.trim()) {
-      await msg({ type: POPUP_VAULT_SET, key: field.key, value: raw.trim() });
-    } else {
-      await msg({ type: POPUP_VAULT_DELETE, key: field.key });
-    }
-  }
-  updateVaultCountLocally();
-  showVaultMsg('Vault saved securely.', 'success');
-  addLog('[Vault] Identity data saved locally.', 'info');
-}
-
-async function deleteVaultField(key) {
-  await msg({ type: POPUP_VAULT_DELETE, key });
-  const input = document.getElementById(`vault_${key}`);
-  if (input) input.value = '';
-  updateVaultCountLocally();
-  showVaultMsg(`Removed ${key} from vault.`, 'info');
+  if (countEl) countEl.textContent = entries.length;
 }
 
 async function flushVault() {
   if (!confirm('Clear ALL vault data? This cannot be undone.')) return;
   await msg({ type: POPUP_VAULT_FLUSH });
-  for (const field of VAULT_FIELDS) {
-    const input = document.getElementById(`vault_${field.key}`);
-    if (input) input.value = '';
-  }
-  updateVaultCountLocally();
+  loadVaultUI();
   showVaultMsg('Vault cleared.', 'warning');
   addLog('[Vault] All identity data cleared.', 'warning');
+}
+
+const vaultAddForm = document.getElementById('vaultAddForm');
+if (vaultAddForm) {
+  vaultAddForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const keyInput = document.getElementById('vaultAddKey');
+      const valInput = document.getElementById('vaultAddValue');
+      const k = keyInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+      const v = valInput.value.trim();
+      if (k && v) {
+          await msg({ type: POPUP_VAULT_SET, key: k, value: v });
+          keyInput.value = '';
+          valInput.value = '';
+          showVaultMsg(`Added ${k}`, 'success');
+          loadVaultUI();
+      }
+  });
 }
 
 function showVaultMsg(text, type = 'info') {
@@ -1013,9 +1009,7 @@ if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprova
 
 
 // Wire vault buttons
-const saveVaultBtn = document.getElementById('saveVaultBtn');
 const flushVaultBtn = document.getElementById('clearVaultBtn');
-if (saveVaultBtn) saveVaultBtn.addEventListener('click', saveVault);
 if (flushVaultBtn) flushVaultBtn.addEventListener('click', flushVault);
 loadVaultUI();
 
