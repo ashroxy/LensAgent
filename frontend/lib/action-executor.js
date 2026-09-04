@@ -488,9 +488,14 @@ export class ActionExecutor {
           }
 
           // --- TEXT-like: fill the value ---
+          let valToSet = value;
+          if (el.type === 'date') {
+             const d = new Date(value);
+             if (!isNaN(d)) valToSet = d.toISOString().split('T')[0];
+          }
           const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
           const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-          if (nativeSetter) nativeSetter.call(el, value); else el.value = value;
+          if (nativeSetter) nativeSetter.call(el, valToSet); else el.value = valToSet;
           el.dispatchEvent(new Event('input', { bubbles: true }));
           el.dispatchEvent(new Event('change', { bubbles: true }));
           return { success: true, id: el.id || target, value: el.value, kind: 'text' };
