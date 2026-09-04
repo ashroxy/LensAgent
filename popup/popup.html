@@ -92,8 +92,8 @@
                         <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
                             <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button></div>
                             <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
-                                <span class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[10px] uppercase z-0 tracking-widest pointer-events-none">Awaiting Signal</span>
-                                <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain opacity-70 grayscale mix-blend-luminosity z-10 relative"></canvas>
+                                <span id="liveStreamPlaceholder" class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[10px] uppercase z-0 tracking-widest pointer-events-none transition-opacity duration-300">Awaiting Signal</span>
+                                <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain z-10 relative"></canvas>
                             </div>
                         </div>
                         <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
@@ -103,7 +103,7 @@
                                 </div>
                             </div></div>
                             <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
-                                <span class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[10px] uppercase z-0 tracking-widest pointer-events-none">Awaiting Signal</span>
+                                <span id="annotatedStreamPlaceholder" class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[10px] uppercase z-0 tracking-widest pointer-events-none transition-opacity duration-300">Awaiting Signal</span>
                                 <canvas id="annotatedStream" width="1280" height="720" class="w-full h-full object-contain z-10 relative"></canvas>
                             </div>
                         </div>
@@ -317,7 +317,7 @@
             </button>
         </div>
         <div class="flex-1 neu-recessed rounded-2xl relative overflow-hidden bg-[#000] p-2 w-full flex items-center justify-center">
-            <span class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[14px] uppercase z-0 tracking-widest pointer-events-none">Awaiting Signal</span>
+            <span id="modalCanvasPlaceholder" class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[14px] uppercase z-0 tracking-widest pointer-events-none transition-opacity duration-300">Awaiting Signal</span>
             <canvas id="modalCanvas" class="w-full h-full object-contain z-10 relative"></canvas>
         </div>
     </div>

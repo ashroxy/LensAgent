@@ -279,6 +279,8 @@ function renderAuditFrame(p) {
   if (p.rawFrame) {
     const img = new Image();
     img.onload = () => {
+      const ph = document.getElementById("liveStreamPlaceholder");
+      if (ph) ph.style.display = "none";
       // Dynamically match canvas internal resolution to incoming frame
       if (rawCanvas.width !== img.naturalWidth || rawCanvas.height !== img.naturalHeight) {
         rawCanvas.width  = img.naturalWidth;
@@ -293,6 +295,8 @@ function renderAuditFrame(p) {
   if (p.redactedFrame) {
     const img2 = new Image();
     img2.onload = () => {
+      const ph2 = document.getElementById("annotatedStreamPlaceholder");
+      if (ph2) ph2.style.display = "none";
       if (redactedCanvas.width !== img2.naturalWidth || redactedCanvas.height !== img2.naturalHeight) {
         redactedCanvas.width  = img2.naturalWidth;
         redactedCanvas.height = img2.naturalHeight;
@@ -665,6 +669,8 @@ function mirrorToModal() {
   }
 
   const src = activeModalStream === "raw" ? document.getElementById("liveStream") : document.getElementById("annotatedStream");
+  const modalPh = document.getElementById("modalCanvasPlaceholder");
+  if (modalPh) modalPh.style.display = "none";
 
   // Match modal canvas resolution to source
   if (modalCanvas.width !== src.width || modalCanvas.height !== src.height) {
