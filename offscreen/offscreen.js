@@ -212,17 +212,17 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], defaultDpr = 1.0, 
   const t0 = performance.now();
   frameCount++;
 
-  // 1. Decode frame & verify true DPR scaling using zero-copy ImageBitmap
-  let imageBitmap;
-  if (buffer) {
-    const blob = new Blob([buffer], { type: 'image/jpeg' });
-    imageBitmap = await createImageBitmap(blob);
-  } else {
-    const res = await fetch(`data:image/jpeg;base64,${rawBase64}`);
-    const blob = await res.blob();
-    imageBitmap = await createImageBitmap(blob);
+  // 1. Decode frame & verify true DPR scaling!
+  let dpr = defaultDpr;
+  if (viewportWidth) {
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = rawBase64.startsWith('data:') ? rawBase64 : `data:image/jpeg;base64,${rawBase64}`;
+    });
+    dpr = img.width / viewportWidth;
   }
-  const dpr = viewportWidth ? (imageBitmap.width / viewportWidth) : defaultDpr;
   const decodeMs = 0; // Handled internally by privacy engine
 
   // 2. Structural element detection via Member 1 WebGPU Model
@@ -250,7 +250,7 @@ async function processFrame(rawBase64, buffer, piiBoxes = [], defaultDpr = 1.0, 
   // 3. PII detection & canvas redaction via PrivacyEngine
   const tRedact = performance.now();
   const { sanitizedImage, tokenMap } = await privacyEngine.sanitizeViewport(
-    imageBitmap,
+    rawBase64,
     [...elements, ...scaledPiiBoxes],
     dpr
   );

@@ -18,7 +18,7 @@ export class PrivacyEngine {
   static PII_PATTERNS = {
     AADHAAR: /\b[2-9]\d{3}[ -]?\d{4}[ -]?\d{4}\b/,
     PAN: /\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b/,
-    CREDIT_CARD: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9]{2})[0-9]{12}|3[47][0-9]{13}|35\d{14})\b/,
+    CREDIT_CARD: /(?<!\d)(?:\d{4}[\s\-]?){3}\d{4}(?!\d)|(?<!\d)\d{13,16}(?!\d)/,
     PHONE: /\b(?:\+91[ -]?)?[6-9]\d{9}\b/,
     EMAIL: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/
   };
@@ -225,6 +225,28 @@ export class PrivacyEngine {
   }
 
   /**
+   * Luhn checksum - returns true only for a valid credit-card number.
+   * Distinguishes real PAN numbers from arbitrary digit runs (e.g. phone/test
+   * numbers that merely look card-shaped, like "4000244140625").
+   */
+  _isValidLuhnCard(digits) {
+    const clean = (digits || "").replace(/[\s\-]/g, "");
+    if (!/^\d{13,16}$/.test(clean)) return false;
+    let sum = 0;
+    let double = false;
+    for (let i = clean.length - 1; i >= 0; i--) {
+      let d = clean.charCodeAt(i) - 48;
+      if (double) {
+        d *= 2;
+        if (d > 9) d -= 9;
+      }
+      sum += d;
+      double = !double;
+    }
+    return sum % 10 === 0;
+  }
+
+  /**
    * Member 4 Validation: Scans outgoing JSON payload for unmasked PII
    * @param {object|string} payload - JSON object or string to validate
    * @returns {boolean} True if safe
@@ -232,16 +254,78 @@ export class PrivacyEngine {
    */
   validatePayload(payload) {
     if (!this.enableStrictZeroLeakage) return true;
+    if (payload == null) return true;
 
-    const payloadString = (typeof payload === 'string') ? payload : JSON.stringify(payload);
+    const patterns = PrivacyEngine.PII_PATTERNS;
+    // Clone each pattern with the global flag so `exec` advances lastIndex
+    // (the static patterns are non-global literals).
+    const globalPatterns = Object.fromEntries(
+      Object.entries(patterns).map(([k, rx]) => [
+        k,
+        new RegExp(rx.source, rx.flags.includes('g') ? rx.flags : rx.flags + 'g'),
+      ])
+    );
+    const violations = [];
 
-    for (const [key, regex] of Object.entries(PrivacyEngine.PII_PATTERNS)) {
-      const match = payloadString.match(regex);
-      if (match) {
-        throw new Error(`Unmasked ${key} detected in payload: "${match[0]}". Payload blocked locally to prevent privacy leak.`);
+    // Walk the structured object so each leak is attributed to a path
+    // (e.g. "browser_state.elements[2].value") instead of a raw match index.
+    const CONTENT_KEYS = new Set([
+      "value", "text", "label", "placeholder", "name", "title", "url",
+      "actual", "actual_value", "expected", "expected_value", "expectedValue",
+      "optionText", "aria_label", "aria-label", "description", "task", "detail",
+      "answer", "full_text", "content", "option_text", "text_content",
+    ]);
+    const scanValue = (value, path, key) => {
+      if (value == null) return;
+      if (typeof value === 'string') {
+        const str = value;
+        for (const [category, regex] of Object.entries(globalPatterns)) {
+          regex.lastIndex = 0;
+          let match;
+          while ((match = regex.exec(str)) !== null) {
+            const val = match[0];
+            const isSafe = /^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(val);
+            if (isSafe) continue;
+            if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(val)) continue;
+            violations.push({ category, matchedSample: val.slice(0, 3) + '****' + val.slice(-2), path });
+          }
+        }
+        return;
       }
+      // Numbers are only scanned in content-bearing fields
+      if (typeof value === 'number' && CONTENT_KEYS.has(key)) {
+        const str = String(value);
+        for (const [category, regex] of Object.entries(globalPatterns)) {
+          regex.lastIndex = 0;
+          let match;
+          while ((match = regex.exec(str)) !== null) {
+            const val = match[0];
+            const isSafe = /^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(val);
+            if (isSafe) continue;
+            if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(val)) continue;
+            violations.push({ category, matchedSample: val.slice(0, 3) + '****' + val.slice(-2), path });
+          }
+        }
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((item, i) => scanValue(item, `${path}[${i}]`, key));
+        return;
+      }
+      if (typeof value === 'object') {
+        for (const [childKey, item] of Object.entries(value)) {
+          scanValue(item, path ? `${path}.${childKey}` : childKey, childKey);
+        }
+      }
+    };
+    if (typeof payload === 'object' && payload !== null) {
+      scanValue(payload, "", "");
     }
 
+    if (violations.length > 0) {
+      const detail = violations.map((v) => `${v.category}@${v.path || "?"}(=${v.matchedSample})`).join("; ");
+      throw new Error(`[PrivacyEngine] SECURITY ALERT: Blocked outgoing payload with ${violations.length} unmasked PII leaks (${detail}).`);
+    }
     return true;
   }
 }
