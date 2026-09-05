@@ -1,4 +1,4 @@
-// offscreen.js - High-Speed WebGPU & DOM Ground-Truth Fusion Redaction Engine
+ï»¿// offscreen.js - High-Speed WebGPU & DOM Ground-Truth Fusion Redaction Engine
 import { pipeline, env, RawImage } from '@xenova/transformers';
 
 // 1. Configure WebGPU Execution Environment
@@ -7,7 +7,8 @@ env.allowRemoteModels = true;
 env.remoteHost = 'https://huggingface.co';
 env.remotePath = '{model}/resolve/{revision}/';
 env.backends.onnx.wasm.hasWebGPU = true;
-env.backends.onnx.wasm.numThreads = 4;
+env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('lib/ort/');
+env.backends.onnx.wasm.numThreads = 1;
 
 let detector = null;
 let isInitializing = false;
@@ -77,7 +78,7 @@ export async function redactSensitiveData(dataUrl, domBoxes = []) {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(imageBitmap, 0, 0);
 
-    // 2. Run WebGPU Vision Detection — threshold 0.40 minimises false positives on real sites
+    // 2. Run WebGPU Vision Detection â€” threshold 0.40 minimises false positives on real sites
     const visionResults = await detectorInstance(rawImage, VISION_CLASSES, { threshold: 0.40 });
 
     // 3. Dual-Pass Masking with Placeholder / Jargon Text Badges
@@ -117,7 +118,7 @@ export async function redactSensitiveData(dataUrl, domBoxes = []) {
       
       const label = (box.label || 'PII').toUpperCase();
       let placeholder = `[REDACTED_${label}]`;
-      if (label.includes('PASSWORD')) placeholder = '••••••••••••';
+      if (label.includes('PASSWORD')) placeholder = 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢';
       else if (label.includes('CARD')) placeholder = '[REDACTED_CARD_****]';
       else if (label.includes('AADHAAR')) placeholder = '[REDACTED_AADHAAR]';
       else if (label.includes('PAN')) placeholder = '[REDACTED_PAN]';
@@ -232,3 +233,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+
