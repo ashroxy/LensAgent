@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -56,8 +56,9 @@
 
     /* Nav Items */
     .nav-btn {
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
+        cursor: pointer;
     }
     .nav-btn::before {
         content: '';
@@ -69,21 +70,57 @@
         width: 4px;
         background-color: #305f9f;
         border-radius: 0 4px 4px 0;
-        transition: height 0.2s ease;
+        transition: height 0.2s ease, width 0.2s ease;
     }
     .nav-btn.active {
         color: #305f9f;
-        background: rgba(137, 180, 250, 0.1);
-        font-weight: bold;
+        background: rgba(137, 180, 250, 0.12);
+        font-weight: 700;
     }
     .nav-btn.active::before {
         height: 24px;
     }
     .nav-btn:hover:not(.active) {
-        background: rgba(137, 180, 250, 0.05);
+        background: rgba(48, 95, 159, 0.08);
+        color: #1e3a8a;
+        transform: translateX(2px);
+    }
+    .nav-btn:active {
+        transform: scale(0.98);
+        box-shadow: inset 2px 2px 5px #dce1eb, inset -2px -2px 5px #ffffff;
+    }
+    .nav-btn:focus-visible {
+        outline: 2px solid #305f9f !important;
+        outline-offset: 2px;
+        border-radius: 0.5rem;
+    }
+    .nav-btn:disabled,
+    .nav-btn[aria-disabled="true"] {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
     }
     .nav-btn .material-symbols-outlined { transition: color 0.2s; }
     .nav-btn.active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+
+    /* Responsive horizontal nav indicator for mobile / bottom navigation (< 768px) */
+    @media (max-width: 767px) {
+        .nav-btn::before {
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            border-radius: 0 0 3px 3px;
+        }
+        .nav-btn.active::before {
+            width: 24px;
+            height: 3px;
+        }
+        .nav-btn:hover:not(.active) {
+            transform: translateY(-2px);
+        }
+    }
 
     /* Custom Toggle Switch */
     .neu-toggle-input:checked + .neu-toggle-bg {
@@ -96,12 +133,37 @@
 }
 
 /* Base Body Styles */
-body {
+html, body {
     width: 800px;
     height: 600px;
+    max-width: 100vw;
+    max-height: 100vh;
     overflow: hidden;
     user-select: none;
     -webkit-font-smoothing: antialiased;
+}
+
+/* Fluid Popout Tab Mode */
+html.popout-mode,
+html.popout-mode body,
+body.popout-mode {
+    width: 100% !important;
+    height: 100% !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+@media (min-width: 801px), (min-height: 601px) {
+    html, body {
+        width: 100% !important;
+        height: 100% !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+    }
 }
 
 /* Custom Scrollbar */
@@ -121,7 +183,7 @@ body {
 }
 
 /* Ensure hidden works */
-[hidden], .hidden {
+[hidden] {
     display: none !important;
 }
 
@@ -136,12 +198,52 @@ body {
 .conn-badge.poor { color: #ba1a1a; background: rgba(186, 26, 26, 0.12); }
 .conn-badge.offline { color: #737781; background: rgba(115, 119, 129, 0.12); }
 
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .absolute.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-input#goalInput:focus-visible, input.border-none:focus-visible { outline: none !important; }
-.neu-recessed:focus-within { outline: 2px solid #305f9f; outline-offset: 2px; }
+
+/* Accessible Focus Indicators (WCAG 2.1 AA Compliant - Criteria 2.4.7 & 1.4.11) */
+:focus-visible {
+    outline: 2px solid #305f9f !important;
+    outline-offset: 2px !important;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.nav-btn:focus-visible,
+.neu-btn:focus-visible,
+.neu-btn-primary:focus-visible,
+.neu-btn-secondary:focus-visible {
+    outline: 2px solid #305f9f !important;
+    outline-offset: 2px !important;
+}
+
+/* Custom toggle switch: outline visible pill when sr-only input has keyboard focus */
+.neu-toggle-input:focus-visible + .neu-toggle-bg {
+    outline: 2px solid #305f9f !important;
+    outline-offset: 2px !important;
+}
+
+/* Recessed container focus integration */
+.neu-recessed:focus-within {
+    outline: 2px solid #305f9f;
+    outline-offset: 2px;
+}
+
+/* Goal input search bar: parent container provides the single focus outline */
+.neu-recessed:has(#goalInput:focus-visible) {
+    outline: 2px solid #305f9f;
+    outline-offset: 2px;
+}
+#goalInput:focus-visible {
+    outline: none !important;
+}
 
 .items-center { align-items: center; }
 .justify-center { justify-content: center; }

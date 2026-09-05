@@ -20,7 +20,12 @@ export class PrivacyEngine {
     PAN: /\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b/,
     CREDIT_CARD: /(?<!\d)(?:\d{4}[\s\-]?){3}\d{4}(?!\d)|(?<!\d)\d{13,16}(?!\d)/,
     PHONE: /\b(?:\+91[ -]?)?[6-9]\d{9}\b/,
-    EMAIL: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/
+    EMAIL: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/,
+    UPI_ID: /[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}/i,
+    PASSPORT: /[A-Z][1-9][0-9]{7}/,
+    DRIVING_LICENSE: /[A-Z]{2}[0-9]{2}[0-9]{11}|[A-Z]{2}-[0-9]{13}/,
+    VOTER_ID: /[A-Z]{3}[0-9]{7}/,
+    PIN_CODE: /\b[1-9][0-9]{5}\b/
   };
 
   /**
@@ -31,6 +36,11 @@ export class PrivacyEngine {
    */
   static getPlaceholderText(category = '', label = '') {
     const cat = (category || label || '').toUpperCase();
+    if (cat === 'UPI_ID' || cat.includes('UPI')) return '[REDACTED_UPI_ID]';
+    if (cat === 'PASSPORT' || cat.includes('PASSPORT')) return '[REDACTED_PASSPORT_****]';
+    if (cat === 'DRIVING_LICENSE' || cat.includes('LICENSE') || cat.includes('DRIVING') || cat.includes('DL')) return '[REDACTED_DL_****]';
+    if (cat === 'VOTER_ID' || cat.includes('VOTER')) return '[REDACTED_VOTER_ID]';
+    if (cat === 'PIN_CODE' || cat.includes('PIN') || cat.includes('POSTAL') || cat.includes('ZIP')) return '[REDACTED_PIN_CODE]';
     if (cat.includes('PASSWORD')) return '••••••••••••';
     if (cat.includes('CARD') || cat.includes('CC')) return '[REDACTED_CARD_****]';
     if (cat.includes('AADHAAR')) return '[REDACTED_AADHAAR_****]';
@@ -247,6 +257,137 @@ export class PrivacyEngine {
   }
 
   /**
+   * Redacts sensitive PII in text using defined patterns and placeholders.
+   * @param {string} text - Input text containing sensitive PII
+   * @returns {string} Text with all PII replaced by safe placeholders
+   */
+  redactText(text) {
+    if (typeof text !== 'string' || !text) return text;
+    let redacted = text;
+
+    const order = [
+      'EMAIL',
+      'CREDIT_CARD',
+      'AADHAAR',
+      'PAN',
+      'PHONE',
+      'UPI_ID',
+      'PASSPORT',
+      'DRIVING_LICENSE',
+      'VOTER_ID',
+      'PIN_CODE'
+    ];
+
+    for (const category of order) {
+      const rx = PrivacyEngine.PII_PATTERNS[category];
+      if (!rx) continue;
+      const flags = rx.flags.includes('g') ? rx.flags : rx.flags + 'g';
+      const globalRx = new RegExp(rx.source, flags);
+      redacted = redacted.replace(globalRx, (match) => {
+        if (/^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(match)) return match;
+        if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(match)) return match;
+        return PrivacyEngine.getPlaceholderText(category);
+      });
+    }
+
+    return redacted;
+  }
+
+  static redactText(text) {
+    const engine = new PrivacyEngine();
+    return engine.redactText(text);
+  }
+
+  /**
+   * Recursively scans a value, object, or array for sensitive PII violations.
+   * @param {*} value - The value or object to scan
+   * @param {string} [path=''] - The current object path
+   * @param {string} [key=''] - The property key name
+   * @param {Array} [violations=[]] - Array to collect detected violations
+   * @returns {Array} List of detected violations
+   */
+  scanValue(value, path = '', key = '', violations = []) {
+    if (value == null) return violations;
+    if (key === 'session_id' || key === 'sessionId') return violations;
+
+    const CONTENT_KEYS = new Set([
+      'value', 'text', 'label', 'placeholder', 'name', 'title', 'url',
+      'actual', 'actual_value', 'expected', 'expected_value', 'expectedValue',
+      'optionText', 'aria_label', 'aria-label', 'description', 'task', 'detail',
+      'answer', 'full_text', 'content', 'option_text', 'text_content',
+      'pincode', 'pin_code', 'pin', 'postal_code', 'zip', 'zipcode'
+    ]);
+
+    const globalPatterns = Object.fromEntries(
+      Object.entries(PrivacyEngine.PII_PATTERNS).map(([k, rx]) => [
+        k,
+        new RegExp(rx.source, rx.flags.includes('g') ? rx.flags : rx.flags + 'g'),
+      ])
+    );
+
+    if (typeof value === 'string') {
+      const str = value;
+      for (const [category, regex] of Object.entries(globalPatterns)) {
+        regex.lastIndex = 0;
+        let match;
+        while ((match = regex.exec(str)) !== null) {
+          const val = match[0];
+          const isSafe = /^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(val);
+          if (isSafe) continue;
+          if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(val)) continue;
+          violations.push({
+            category,
+            matchedSample: val.length > 5 ? val.slice(0, 3) + '****' + val.slice(-2) : '****',
+            path: path || key || 'root'
+          });
+        }
+      }
+      return violations;
+    }
+
+    if (typeof value === 'number' && (CONTENT_KEYS.has(key) || !key)) {
+      const str = String(value);
+      for (const [category, regex] of Object.entries(globalPatterns)) {
+        regex.lastIndex = 0;
+        let match;
+        while ((match = regex.exec(str)) !== null) {
+          const val = match[0];
+          const isSafe = /^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(val);
+          if (isSafe) continue;
+          if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(val)) continue;
+          violations.push({
+            category,
+            matchedSample: val.length > 5 ? val.slice(0, 3) + '****' + val.slice(-2) : '****',
+            path: path || key || 'root'
+          });
+        }
+      }
+      return violations;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item, i) => {
+        this.scanValue(item, path ? `${path}[${i}]` : `[${i}]`, key, violations);
+      });
+      return violations;
+    }
+
+    if (typeof value === 'object') {
+      for (const [childKey, item] of Object.entries(value)) {
+        this.scanValue(item, path ? `${path}.${childKey}` : childKey, childKey, violations);
+      }
+      return violations;
+    }
+
+    return violations;
+  }
+
+  static scanValue(value, path = '', key = '', violations = []) {
+    const engine = new PrivacyEngine();
+    return engine.scanValue(value, path, key, violations);
+  }
+
+  /**
    * Member 4 Validation: Scans outgoing JSON payload for unmasked PII
    * @param {object|string} payload - JSON object or string to validate
    * @returns {boolean} True if safe
@@ -256,75 +397,15 @@ export class PrivacyEngine {
     if (!this.enableStrictZeroLeakage) return true;
     if (payload == null) return true;
 
-    const patterns = PrivacyEngine.PII_PATTERNS;
-    // Clone each pattern with the global flag so `exec` advances lastIndex
-    // (the static patterns are non-global literals).
-    const globalPatterns = Object.fromEntries(
-      Object.entries(patterns).map(([k, rx]) => [
-        k,
-        new RegExp(rx.source, rx.flags.includes('g') ? rx.flags : rx.flags + 'g'),
-      ])
-    );
     const violations = [];
-
-    // Walk the structured object so each leak is attributed to a path
-    // (e.g. "browser_state.elements[2].value") instead of a raw match index.
-    const CONTENT_KEYS = new Set([
-      "value", "text", "label", "placeholder", "name", "title", "url",
-      "actual", "actual_value", "expected", "expected_value", "expectedValue",
-      "optionText", "aria_label", "aria-label", "description", "task", "detail",
-      "answer", "full_text", "content", "option_text", "text_content",
-    ]);
-    const scanValue = (value, path, key) => {
-      if (value == null) return;
-      if (key === "session_id" || key === "sessionId") return;
-      if (typeof value === 'string') {
-        const str = value;
-        for (const [category, regex] of Object.entries(globalPatterns)) {
-          regex.lastIndex = 0;
-          let match;
-          while ((match = regex.exec(str)) !== null) {
-            const val = match[0];
-            const isSafe = /^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(val);
-            if (isSafe) continue;
-            if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(val)) continue;
-            violations.push({ category, matchedSample: val.slice(0, 3) + '****' + val.slice(-2), path });
-          }
-        }
-        return;
-      }
-      // Numbers are only scanned in content-bearing fields
-      if (typeof value === 'number' && CONTENT_KEYS.has(key)) {
-        const str = String(value);
-        for (const [category, regex] of Object.entries(globalPatterns)) {
-          regex.lastIndex = 0;
-          let match;
-          while ((match = regex.exec(str)) !== null) {
-            const val = match[0];
-            const isSafe = /^\[?(REDACTED_|SYS_|PROTECTED_|MASKED_)/.test(val);
-            if (isSafe) continue;
-            if (category === 'CREDIT_CARD' && !this._isValidLuhnCard(val)) continue;
-            violations.push({ category, matchedSample: val.slice(0, 3) + '****' + val.slice(-2), path });
-          }
-        }
-        return;
-      }
-      if (Array.isArray(value)) {
-        value.forEach((item, i) => scanValue(item, `${path}[${i}]`, key));
-        return;
-      }
-      if (typeof value === 'object') {
-        for (const [childKey, item] of Object.entries(value)) {
-          scanValue(item, path ? `${path}.${childKey}` : childKey, childKey);
-        }
-      }
-    };
     if (typeof payload === 'object' && payload !== null) {
-      scanValue(payload, "", "");
+      this.scanValue(payload, '', '', violations);
+    } else if (typeof payload === 'string' || typeof payload === 'number') {
+      this.scanValue(payload, '', '', violations);
     }
 
     if (violations.length > 0) {
-      const detail = violations.map((v) => `${v.category}@${v.path || "?"}(=${v.matchedSample})`).join("; ");
+      const detail = violations.map((v) => `${v.category}@${v.path || '?'}(=${v.matchedSample})`).join('; ');
       throw new Error(`[PrivacyEngine] SECURITY ALERT: Blocked outgoing payload with ${violations.length} unmasked PII leaks (${detail}).`);
     }
     return true;

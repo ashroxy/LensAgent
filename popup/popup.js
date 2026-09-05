@@ -113,24 +113,79 @@ let pendingApprovalCorrelationId = null;
 // TAB NAVIGATION
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+// Centralized accessible tab switching function
+function switchTab(target) {
+  const navBtns = document.querySelectorAll(".nav-btn");
+  const tabPanes = document.querySelectorAll(".tab-content");
+  const targetBtn = document.querySelector(`.nav-btn[data-tab="${target}"]`);
+  const targetPane = document.getElementById(`tab-${target}`);
+
+  if (!targetBtn || !targetPane) return;
+
+  navBtns.forEach((btn) => {
+    btn.classList.remove("active");
+    btn.setAttribute("aria-selected", "false");
+    btn.setAttribute("tabindex", "-1");
+  });
+  tabPanes.forEach((pane) => {
+    pane.classList.remove("active");
+    pane.setAttribute("aria-hidden", "true");
+  });
+
+  targetBtn.classList.add("active");
+  targetBtn.setAttribute("aria-selected", "true");
+  targetBtn.setAttribute("tabindex", "0");
+  targetPane.classList.add("active");
+  targetPane.removeAttribute("aria-hidden");
+
+  const titles = { agent: "Agent Dashboard", settings: "System Settings", history: "Session History", vault: "Identity Vault" };
+  const headerTitle = document.getElementById("headerTitle");
+  if (headerTitle) headerTitle.textContent = titles[target] || "LensAgent";
+
+  // Load data when switching to settings, history, or vault
+  if (target === "settings" && typeof loadSettingsUI === "function") loadSettingsUI();
+  if (target === "history" && typeof loadHistoryUI === "function") loadHistoryUI();
+  if (target === "vault" && typeof loadVaultUI === "function") loadVaultUI();
+}
+window.switchTab = switchTab;
+
+// Initialize WAI-ARIA roving tabindex (active tab has tabindex="0", inactive tabs have tabindex="-1")
 document.querySelectorAll(".nav-btn").forEach((btn) => {
+  btn.setAttribute("tabindex", btn.classList.contains("active") ? "0" : "-1");
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".nav-btn").forEach((t) => t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
-    btn.classList.add("active");
-    const target = btn.dataset.tab;
-    document.getElementById(`tab-${target}`).classList.add("active");
-
-    const titles = { agent: "Agent Dashboard", settings: "System Settings", history: "Session History", vault: "Identity Vault" };
-    const headerTitle = document.getElementById("headerTitle");
-    if (headerTitle) headerTitle.textContent = titles[target] || "LensAgent";
-
-    // Load data when switching to settings or history
-    if (target === "settings") loadSettingsUI();
-    if (target === "history") loadHistoryUI();
-    if (target === "vault") loadVaultUI();
+    switchTab(btn.dataset.tab);
   });
 });
+
+// WAI-ARIA Keyboard Navigation across Tablist
+const tablist = document.querySelector('[role="tablist"]') || document.querySelector('nav div.flex-col');
+if (tablist) {
+  tablist.addEventListener("keydown", (e) => {
+    const tabs = Array.from(document.querySelectorAll(".nav-btn"));
+    const currentIndex = tabs.indexOf(document.activeElement);
+    if (currentIndex === -1) return;
+
+    let nextIndex = null;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % tabs.length;
+    } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      e.preventDefault();
+      nextIndex = tabs.length - 1;
+    }
+
+    if (nextIndex !== null) {
+      tabs[nextIndex].focus();
+      switchTab(tabs[nextIndex].dataset.tab);
+    }
+  });
+}
 
 // ========================================================================================================================
 // POP-OUT MODE DETECTION
@@ -139,7 +194,16 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 // If this page is opened as a full tab (not a popup), we are in "pop-out" mode.
 // In pop-out mode, Start Agent must target a real webpage tab, not this extension tab.
 let targetTabId = null;
-const isPopoutMode = window.innerWidth > 800 || window.innerHeight > 600;
+const params = new URLSearchParams(window.location.search);
+const isPopoutMode = params.get("popout") === "true" ||
+                     params.get("mode") === "tab" ||
+                     window.innerWidth > 800 ||
+                     window.innerHeight > 600;
+
+if (isPopoutMode) {
+  document.documentElement.classList.add("popout-mode");
+  if (document.body) document.body.classList.add("popout-mode");
+}
 
 const btnPopout = document.getElementById("btnPopout");
 const btnTestConnection = document.getElementById("btnTestConnection");
@@ -161,7 +225,7 @@ const btnTestConnection = document.getElementById("btnTestConnection");
 
 if (btnPopout) {
   btnPopout.addEventListener("click", () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html") });
+    chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html?popout=true") });
   });
 }
 
@@ -194,6 +258,12 @@ startBtn.addEventListener("click", async () => {
   }
 });
 
+goalInput.addEventListener("keyup", (e) => {
+  if (e.key === "Enter" && !startBtn.disabled) {
+    startBtn.click();
+  }
+});
+
 stopBtn.addEventListener("click", async () => {
   stopBtn.disabled = true;
   await msg({ type: POPUP_STOP_AGENT, targetTabId: targetTabId || currentPopupTabId });
@@ -209,8 +279,8 @@ if (btnTestConnection) {
   btnTestConnection.addEventListener("click", async () => {
     btnTestConnection.classList.add("opacity-50");
     try {
-      let data = await chrome.storage.local.get("agentSettings");
-      const url = (data?.agentSettings?.backendUrl || "http://localhost:8000") + "/api/health";
+      let data = await chrome.storage.local.get("userSettings");
+      const url = (data?.userSettings?.backendUrl || "http://localhost:8000") + "/health";
       const res = await fetch(url);
       if (res.ok) setConnectionBadge("EXCELLENT");
       else setConnectionBadge("POOR");
@@ -576,10 +646,14 @@ async function loadHistoryUI() {
   historyList.innerHTML = "";
 
   if (!history || history.length === 0) {
+    clearHistoryBtn.disabled = true;
     historyList.innerHTML = `
       <div id="historyEmpty" class="m-auto text-center flex flex-col items-center opacity-60"><span class="material-symbols-outlined text-[32px] mb-2 text-outline">history</span><span class="text-[12px] text-on-surface-variant mb-4">No past sessions yet.</span><button id="emptyGoToAgentBtn" class="neu-btn px-4 py-2 rounded-xl text-primary font-bold text-[11px] uppercase tracking-wider">Run an agent</button></div>`;
+    const btn = document.getElementById("emptyGoToAgentBtn");
+    if(btn) btn.addEventListener("click", () => switchTab("agent"));
     return;
   }
+  clearHistoryBtn.disabled = false;
 
   for (const entry of history) {
     const card = document.createElement("div");
@@ -596,8 +670,14 @@ async function loadHistoryUI() {
       hour: "2-digit", minute: "2-digit", hour12: false,
     });
 
+    const goalText = entry.goal || "Untitled Task";
     card.innerHTML = `
-      <div class="font-headline-md text-[14px] text-on-surface font-bold whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(entry.goal || "Untitled Task")}</div>
+      <div class="flex justify-between items-start gap-2">
+        <div class="font-headline-md text-[14px] text-on-surface font-bold whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(goalText)}</div>
+        <button class="rerun-btn w-6 h-6 rounded neu-btn flex items-center justify-center shrink-0 text-primary hover:text-tertiary" title="Re-run this goal">
+          <span class="material-symbols-outlined text-[14px]">replay</span>
+        </button>
+      </div>
       <div class="flex items-center gap-3 flex-wrap font-mono text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">
         <span class="px-2 py-1 rounded neu-recessed ${result === 'ERROR' ? 'text-error' : 'text-primary'}">${result}</span>
         <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">footprint</span> ${entry.steps || 0} steps</span>
@@ -605,6 +685,16 @@ async function loadHistoryUI() {
         <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> ${dateStr}</span>
       </div>
     `;
+
+    const rerunBtn = card.querySelector('.rerun-btn');
+    if (rerunBtn) {
+      rerunBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goalInput.value = goalText;
+        switchTab('agent');
+      });
+    }
+
     historyList.appendChild(card);
   }
 }
@@ -760,17 +850,27 @@ async function loadVaultUI() {
     valEl.readOnly = true;
     valEl.className = "bg-transparent border-none outline-none text-body-md text-primary font-bold w-full";
     valEl.id = `vault_val_${key}`;
+    valEl.setAttribute("aria-label", `Vault value for ${key}`);
 
     const toggleEyeBtn = document.createElement("button");
-    toggleEyeBtn.className = "text-on-surface-variant hover:text-primary transition-colors focus:outline-none shrink-0";
+    toggleEyeBtn.className = "p-2 rounded text-on-surface-variant hover:text-primary transition-colors shrink-0";
     toggleEyeBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">visibility</span>`;
+    toggleEyeBtn.setAttribute("aria-label", `Reveal value for ${key}`);
+    toggleEyeBtn.setAttribute("aria-pressed", "false");
+    toggleEyeBtn.title = "Reveal value";
     toggleEyeBtn.onclick = () => {
         if (valEl.type === "password") {
             valEl.type = "text";
             toggleEyeBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">visibility_off</span>`;
+            toggleEyeBtn.setAttribute("aria-label", `Mask value for ${key}`);
+            toggleEyeBtn.setAttribute("aria-pressed", "true");
+            toggleEyeBtn.title = "Mask value";
         } else {
             valEl.type = "password";
             toggleEyeBtn.innerHTML = `<span class="material-symbols-outlined text-[16px]">visibility</span>`;
+            toggleEyeBtn.setAttribute("aria-label", `Reveal value for ${key}`);
+            toggleEyeBtn.setAttribute("aria-pressed", "false");
+            toggleEyeBtn.title = "Reveal value";
         }
     };
 
@@ -781,15 +881,19 @@ async function loadVaultUI() {
     leftCol.appendChild(valContainer);
 
     const rightCol = document.createElement("div");
-    rightCol.className = "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0";
+    rightCol.className = "flex items-center gap-1 shrink-0";
 
     const saveBtn = document.createElement("button");
     saveBtn.className = "w-8 h-8 rounded-lg neu-btn-primary text-primary flex items-center justify-center hidden";
     saveBtn.innerHTML = `<span class="material-symbols-outlined text-[14px]">save</span>`;
+    saveBtn.setAttribute("aria-label", `Save ${key}`);
+    saveBtn.title = `Save ${key}`;
     
     const editBtn = document.createElement("button");
     editBtn.className = "w-8 h-8 rounded-lg neu-btn flex items-center justify-center text-on-surface-variant hover:text-primary";
     editBtn.innerHTML = `<span class="material-symbols-outlined text-[14px]">edit</span>`;
+    editBtn.setAttribute("aria-label", `Edit ${key}`);
+    editBtn.title = `Edit ${key}`;
     
     editBtn.onclick = () => {
         valEl.readOnly = false;
@@ -798,7 +902,6 @@ async function loadVaultUI() {
         valEl.className = "neu-flat rounded-md px-2 py-1 text-body-sm text-primary font-bold w-full border-none outline-none";
         editBtn.classList.add("hidden");
         saveBtn.classList.remove("hidden");
-        rightCol.classList.remove("opacity-0", "group-hover:opacity-100"); // Keep visible
     };
     
     saveBtn.onclick = async () => {
@@ -816,6 +919,8 @@ async function loadVaultUI() {
     const delBtn = document.createElement("button");
     delBtn.className = "w-8 h-8 rounded-lg neu-btn flex items-center justify-center text-error hover:text-error";
     delBtn.innerHTML = `<span class="material-symbols-outlined text-[14px]">delete</span>`;
+    delBtn.setAttribute("aria-label", `Delete ${key}`);
+    delBtn.title = `Delete ${key}`;
     delBtn.onclick = async () => {
         await msg({ type: POPUP_VAULT_DELETE, key });
         showVaultMsg('Item deleted', 'info');
@@ -858,9 +963,22 @@ if (vaultAddForm) {
           valInput.value = '';
           showVaultMsg(`Added ${k}`, 'success');
           loadVaultUI();
+      } else {
+          showVaultMsg("Key and Value required", "error");
       }
   });
 }
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const keyInput = document.getElementById('vaultAddKey');
+    const valInput = document.getElementById('vaultAddValue');
+    if (keyInput) {
+      keyInput.value = btn.dataset.key;
+      if (valInput) valInput.focus();
+    }
+  });
+});
 
 function showVaultMsg(text, type = 'info') {
   if (!vaultMsg) return;
@@ -975,11 +1093,30 @@ if (hitlInput) {
   });
 }
 
+const hitlAbortBtn = document.getElementById("hitlAbortBtn");
+if (hitlAbortBtn) {
+  hitlAbortBtn.addEventListener('click', async () => {
+    if (pendingHitlCorrelationId !== null) {
+      await msg({
+        type: POPUP_HITL_RESPONSE,
+        correlationId: pendingHitlCorrelationId,
+        aborted: true
+      });
+    }
+    hitlOverlay.hidden = true;
+    pendingHitlCorrelationId = null;
+    pendingHitlVaultKey = null;
+    addLog("[HITL] User aborted action.", "warning");
+  });
+}
+
 function showApprovalPrompt(payload) {
   pendingApprovalCorrelationId = payload.correlationId;
   approvalContext.textContent = payload.context || 'The agent wants to perform a sensitive action.';
   approvalDetail.textContent = payload.detail || '';
   approvalOverlay.hidden = false;
+  
+  if (approvalApproveBtn) approvalApproveBtn.focus();
   
   setState(AgentState.WAITING_FOR_APPROVAL);
   addLog(`[APPROVAL] Sensitive action: "${payload.context}"`, 'warning');
@@ -1001,6 +1138,16 @@ async function sendApprovalResponse(approved) {
 
 if (approvalApproveBtn) approvalApproveBtn.addEventListener('click', () => sendApprovalResponse(true));
 if (approvalDenyBtn) approvalDenyBtn.addEventListener('click', () => sendApprovalResponse(false));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (hitlOverlay && !hitlOverlay.hidden) {
+      if (hitlAbortBtn) hitlAbortBtn.click();
+    } else if (approvalOverlay && !approvalOverlay.hidden) {
+      if (approvalDenyBtn) approvalDenyBtn.click();
+    }
+  }
+});
 
 
 

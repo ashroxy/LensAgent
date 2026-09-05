@@ -8,33 +8,33 @@
     <link href="popup.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 </head>
-<body class="bg-background text-on-surface font-body-md flex overflow-hidden" style="width: 800px; height: 600px;">
+<body class="bg-background text-on-surface font-body-md flex flex-col md:flex-row overflow-hidden w-full h-screen md:w-[800px] md:h-[600px]">
     <!-- SideNavBar (Bottom bar on mobile) -->
-    <nav class="w-[200px] h-full bg-surface-container-low border-r border-outline-variant/10 shadow-sm flex flex-col py-6 shrink-0 z-20">
-        <div class="px-6 mb-8 flex items-center gap-3">
+    <nav class="order-last md:order-first w-full md:w-[200px] h-14 md:h-full bg-surface-container-low border-t md:border-t-0 md:border-r border-outline-variant/10 shadow-sm flex flex-row md:flex-col py-1 md:py-6 shrink-0 z-20">
+        <div class="hidden md:flex px-6 mb-8 items-center gap-3">
             <div class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-primary">lens</span>
+                <span class="material-symbols-outlined text-primary" aria-hidden="true">lens</span>
             </div>
             <div>
                 <h1 class="font-headline-md text-[16px] font-bold text-primary tracking-tight">LensAgent</h1>
                 <p class="font-label-mono text-[10px] text-on-surface-variant">v1.0.0-stable</p>
             </div>
         </div>
-        <div class="flex-1 flex flex-col gap-2 px-3">
-            <button class="nav-btn active flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="agent" aria-label="Agent Dashboard">
-                <span class="material-symbols-outlined text-[24px]">smart_toy</span>
+        <div class="flex-1 flex flex-row md:flex-col justify-around md:justify-start gap-1 md:gap-2 px-2 md:px-3" role="tablist" aria-label="Navigation Tabs">
+            <button class="nav-btn active flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="agent" role="tab" id="tab-btn-agent" aria-selected="true" aria-controls="tab-agent" aria-label="Agent Dashboard" tabindex="0">
+                <span class="material-symbols-outlined text-[24px]" aria-hidden="true">smart_toy</span>
                 <span class="font-body-md text-body-md">Agent</span>
             </button>
-            <button class="nav-btn flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="settings" aria-label="System Settings">
-                <span class="material-symbols-outlined text-[24px]">settings</span>
+            <button class="nav-btn flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="settings" role="tab" id="tab-btn-settings" aria-selected="false" aria-controls="tab-settings" aria-label="System Settings" tabindex="0">
+                <span class="material-symbols-outlined text-[24px]" aria-hidden="true">settings</span>
                 <span class="font-body-md text-body-md">Settings</span>
             </button>
-            <button class="nav-btn flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="history" aria-label="Session History">
-                <span class="material-symbols-outlined text-[24px]">history</span>
+            <button class="nav-btn flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="history" role="tab" id="tab-btn-history" aria-selected="false" aria-controls="tab-history" aria-label="Session History" tabindex="0">
+                <span class="material-symbols-outlined text-[24px]" aria-hidden="true">history</span>
                 <span class="font-body-md text-body-md">History</span>
             </button>
-            <button class="nav-btn flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="vault" aria-label="Identity Vault">
-                <span class="material-symbols-outlined text-[24px]">lock</span>
+            <button class="nav-btn flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="vault" role="tab" id="tab-btn-vault" aria-selected="false" aria-controls="tab-vault" aria-label="Identity Vault" tabindex="0">
+                <span class="material-symbols-outlined text-[24px]" aria-hidden="true">lock</span>
                 <span class="font-body-md text-body-md">Vault</span>
             </button>
         </div>
@@ -43,14 +43,14 @@
     <!-- Main Viewport Area -->
     <div class="flex-1 flex flex-col h-full relative overflow-hidden">
         <!-- TopAppBar -->
-        <header class="h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-10 border-b border-outline-variant/10">
-            <div class="font-headline-md text-headline-md font-bold text-on-surface" id="headerTitle">Agent Dashboard</div>
+        <header class="h-14 md:h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 shrink-0 z-10 border-b border-outline-variant/10">
+            <div class="font-headline-md text-[16px] md:text-headline-md font-bold text-on-surface truncate" id="headerTitle">Agent Dashboard</div>
             <div class="flex items-center gap-4">
-                <button id="btnPopout" title="Open in new tab" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors hidden md:flex">
-                    <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                <button id="btnPopout" title="Open in new tab" aria-label="Open in new tab" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors hidden md:flex">
+                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">open_in_new</span>
                 </button>
-                <button id="btnTestConnection" title="Test Connection" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
-                    <span class="material-symbols-outlined text-[18px]">sensors</span>
+                <button id="btnTestConnection" title="Test Connection" aria-label="Test backend connection" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true">sensors</span>
                 </button>
                 <div class="px-3 py-1 rounded-full neu-recessed text-[10px] font-mono font-bold text-primary uppercase flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-primary animate-pulse" id="statusDot"></div>
@@ -64,23 +64,23 @@
         <main class="flex-1 overflow-y-auto relative p-6 pb-10">
             
             <!-- AGENT TAB -->
-            <section id="tab-agent" class="tab-content active flex-col gap-6 overflow-y-auto pr-2">
+            <section id="tab-agent" class="tab-content active flex-col gap-6 overflow-y-auto pr-2" role="tabpanel" aria-labelledby="tab-btn-agent">
                 <!-- Top Row -->
-                <div class="flex gap-4 items-end">
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-end">
                     <div class="flex-1">
-                        <label class="block font-label-md text-[11px] text-on-surface-variant mb-2 ml-2 uppercase tracking-wider">Agent Goal</label>
+                        <label for="goalInput" class="block font-label-md text-[11px] text-on-surface-variant mb-2 ml-2 uppercase tracking-wider">Agent Goal</label>
                         <div class="neu-recessed rounded-xl px-4 py-3 flex items-center gap-3">
-                            <span class="material-symbols-outlined text-primary text-[20px]">target</span>
-                            <input id="goalInput" class="bg-transparent border-none outline-none w-full font-body-md text-body-md text-on-surface placeholder:text-outline/60 p-0" type="text" placeholder="Enter objective..."/>
+                            <span class="material-symbols-outlined text-primary text-[20px]" aria-hidden="true">target</span>
+                            <input id="goalInput" class="bg-transparent border-none outline-none w-full font-body-md text-body-md text-on-surface placeholder:text-outline/60 p-0" type="text" placeholder="Enter objective..." aria-label="Agent Goal"/>
                         </div>
                         <div id="errorMsg" hidden class="text-[11px] text-error font-bold mt-2 ml-2 transition-opacity duration-300 opacity-0"></div>
                     </div>
-                    <div class="flex gap-3 shrink-0">
+                    <div class="flex gap-2 sm:gap-3 shrink-0">
                         <button id="startBtn" class="neu-btn-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md flex items-center gap-2 uppercase tracking-wider">
-                            <span class="material-symbols-outlined">play_arrow</span> Start
+                            <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> Start
                         </button>
                         <button id="stopBtn" class="neu-btn text-error px-6 py-3 rounded-xl font-label-md text-label-md flex items-center gap-2 uppercase tracking-wider" disabled>
-                            <span class="material-symbols-outlined">stop</span> Halt
+                            <span class="material-symbols-outlined" aria-hidden="true">stop</span> Halt
                         </button>
                     </div>
                 </div>
@@ -88,16 +88,16 @@
                 <!-- Dashboard Grid -->
                 <div class="flex flex-col gap-4">
                     <!-- Video Feeds (2x1) -->
-                    <div class="grid gap-4 grid-cols-2">
-                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
-                            <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button></div>
+                    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px] lg:h-[260px]">
+                            <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw" aria-label="Expand Raw Viewport to fullscreen" title="Fullscreen"><span class="material-symbols-outlined text-[14px]" aria-hidden="true">fullscreen</span></button></div>
                             <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
                                 <span id="liveStreamPlaceholder" class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[10px] uppercase z-0 tracking-widest pointer-events-none transition-opacity duration-300">Awaiting Signal</span>
                                 <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain z-10 relative"></canvas>
                             </div>
                         </div>
-                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
-                            <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Sanitized Stream</span><div class="flex items-center gap-2"><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-tertiary" data-target="redacted"><span class="material-symbols-outlined text-[14px]">fullscreen</span></button><div class="flex items-center gap-2 px-2 py-1 rounded bg-tertiary/10">
+                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px] lg:h-[260px]">
+                            <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Sanitized Stream</span><div class="flex items-center gap-2"><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-tertiary" data-target="redacted" aria-label="Expand Sanitized Stream to fullscreen" title="Fullscreen"><span class="material-symbols-outlined text-[14px]" aria-hidden="true">fullscreen</span></button><div class="flex items-center gap-2 px-2 py-1 rounded bg-tertiary/10">
                                     <div class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></div>
                                     <span class="font-mono text-[9px] text-tertiary uppercase tracking-widest">Live</span>
                                 </div>
@@ -111,7 +111,7 @@
 
                     <!-- Metrics (1x6) -->
                     <div class="neu-flat rounded-2xl p-4">
-                        <div class="grid gap-2 grid-cols-7">
+                        <div class="grid gap-2 grid-cols-2 sm:grid-cols-4 md:grid-cols-7">
                             <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Steps</span>
                                 <span class="font-mono text-[12px] font-bold text-primary whitespace-nowrap"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
@@ -148,7 +148,7 @@
                     </div>
 
                     <!-- Terminal (Execution Log) -->
-                    <div class="neu-flat rounded-2xl p-4 flex flex-col h-[180px] shrink-0">
+                    <div class="neu-flat rounded-2xl p-4 flex flex-col h-[180px] md:h-[200px] lg:h-[240px] xl:h-[300px] shrink-0">
                         <div class="flex justify-between items-center mb-3">
                             <div class="flex items-center gap-2">
                                 <span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
@@ -166,29 +166,29 @@
             </section>
 
             <!-- SETTINGS TAB -->
-            <section id="tab-settings" class="tab-content flex-col gap-6 overflow-y-auto pr-2">
+            <section id="tab-settings" class="tab-content flex-col gap-6 overflow-y-auto pr-2" role="tabpanel" aria-labelledby="tab-btn-settings" aria-hidden="true">
                 <div class="neu-extruded rounded-2xl p-6">
                     <h3 class="font-headline-md text-[14px] text-on-surface mb-4 border-b border-outline-variant/30 pb-3">Connection</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-2 col-span-2">
-                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Server URL</label>
-                            <input id="setting-serverUrl" type="url" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-2 col-span-1 sm:col-span-2">
+                            <label for="setting-serverUrl" class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Server URL</label>
+                            <input id="setting-serverUrl" type="url" placeholder="http://localhost:8000" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Max Steps</label>
-                            <input id="setting-maxSteps" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                            <label for="setting-maxSteps" class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Max Steps</label>
+                            <input id="setting-maxSteps" type="number" min="5" max="100" placeholder="25" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Timeout (ms)</label>
-                            <input id="setting-timeout" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                            <label for="setting-timeout" class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Timeout (ms)</label>
+                            <input id="setting-timeout" type="number" min="2000" max="30000" step="500" placeholder="15000" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Capture Quality</label>
-                            <input id="settCaptureQuality" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                            <label for="settCaptureQuality" class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Capture Quality</label>
+                            <input id="settCaptureQuality" type="number" min="30" max="100" placeholder="80" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Stabilize Delay (ms)</label>
-                            <input id="settStabilizeDelay" type="number" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
+                            <label for="settStabilizeDelay" class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Stabilize Delay (ms)</label>
+                            <input id="settStabilizeDelay" type="number" min="50" max="2000" step="50" placeholder="300" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
                 <div class="neu-extruded rounded-2xl p-6">
                     <h3 class="font-headline-md text-[14px] text-on-surface mb-4 border-b border-outline-variant/30 pb-3">Behaviors</h3>
                     <div class="flex flex-col gap-4">
-                        <label class="flex items-center justify-between cursor-pointer">
+                        <label for="setting-jitter" class="flex items-center justify-between cursor-pointer">
                             <span class="text-[13px] font-bold text-on-surface">Enable Request Jitter</span>
                             <div class="relative">
                                 <input type="checkbox" id="setting-jitter" class="sr-only neu-toggle-input">
@@ -205,7 +205,7 @@
                                 </div>
                             </div>
                         </label>
-                        <label class="flex items-center justify-between cursor-pointer">
+                        <label for="setting-delta" class="flex items-center justify-between cursor-pointer">
                             <span class="text-[13px] font-bold text-on-surface">Delta Synchronization</span>
                             <div class="relative">
                                 <input type="checkbox" id="setting-delta" class="sr-only neu-toggle-input">
@@ -214,7 +214,7 @@
                                 </div>
                             </div>
                         </label>
-                        <label class="flex items-center justify-between cursor-pointer">
+                        <label for="setting-liveAudit" class="flex items-center justify-between cursor-pointer">
                             <span class="text-[13px] font-bold text-on-surface">Live Audit Logging</span>
                             <div class="relative">
                                 <input type="checkbox" id="setting-liveAudit" class="sr-only neu-toggle-input" checked>
@@ -234,11 +234,11 @@
             </section>
 
             <!-- HISTORY TAB -->
-            <section id="tab-history" class="tab-content flex-col h-full overflow-y-auto pr-2">
+            <section id="tab-history" class="tab-content flex-col h-full overflow-y-auto pr-2" role="tabpanel" aria-labelledby="tab-btn-history" aria-hidden="true">
                 <div class="flex justify-between items-center mb-4 shrink-0">
                     <p class="font-body-md text-on-surface-variant text-[13px]">Review past sessions.</p>
                     <button id="clearHistoryBtn" class="px-4 py-2 rounded-lg neu-btn text-error font-label-md text-[11px] uppercase flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[16px]">delete</span> Clear
+                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span> Clear
                     </button>
                 </div>
                 <div class="flex-1 neu-recessed rounded-2xl p-4 overflow-y-auto">
@@ -253,7 +253,7 @@
             </section>
 
             <!-- VAULT TAB -->
-            <section id="tab-vault" class="tab-content flex-col gap-6 overflow-y-auto pr-2">
+            <section id="tab-vault" class="tab-content flex-col gap-6 overflow-y-auto pr-2" role="tabpanel" aria-labelledby="tab-btn-vault" aria-hidden="true">
                 <div class="neu-extruded rounded-2xl p-6 flex flex-col">
                     <div class="flex justify-between items-start border-b border-outline-variant/20 pb-4 mb-4">
                         <div>
@@ -272,11 +272,22 @@
 
                     <!-- Add New Item Form -->
                     <div class="neu-recessed rounded-xl p-4 mt-auto">
-                        <div class="text-[11px] text-on-surface-variant font-bold uppercase mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">add_circle</span> Add Custom Field</div>
+                        <div class="text-[11px] text-on-surface-variant font-bold uppercase mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" aria-hidden="true">bolt</span> Quick Presets</div>
+                        <div class="flex gap-2 flex-wrap mb-4" id="vaultPresets">
+                            <button class="preset-btn neu-btn px-2 py-1 text-[10px] uppercase rounded" data-key="aadhaar_number">Aadhaar</button>
+                            <button class="preset-btn neu-btn px-2 py-1 text-[10px] uppercase rounded" data-key="pan_number">PAN</button>
+                            <button class="preset-btn neu-btn px-2 py-1 text-[10px] uppercase rounded" data-key="upi_id">UPI</button>
+                            <button class="preset-btn neu-btn px-2 py-1 text-[10px] uppercase rounded" data-key="phone_number">Phone</button>
+                            <button class="preset-btn neu-btn px-2 py-1 text-[10px] uppercase rounded" data-key="passport">Passport</button>
+                            <button class="preset-btn neu-btn px-2 py-1 text-[10px] uppercase rounded" data-key="pin_code">PIN Code</button>
+                        </div>
+                        <div class="text-[11px] text-on-surface-variant font-bold uppercase mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" aria-hidden="true">add_circle</span> Add Custom Field</div>
                         <form id="vaultAddForm" class="flex gap-3 items-center">
-                            <input type="text" id="vaultAddKey" placeholder="Key (e.g. passport_num)" class="flex-1 neu-flat rounded-lg px-3 py-2 text-body-sm bg-transparent border-none outline-none" required />
-                            <input type="password" id="vaultAddValue" placeholder="Value" class="flex-1 neu-flat rounded-lg px-3 py-2 text-body-sm bg-transparent border-none outline-none" required />
-                            <button type="submit" class="p-2 neu-btn-primary rounded-lg text-primary flex items-center justify-center shrink-0" title="Add to Vault"><span class="material-symbols-outlined text-[18px]">add</span></button>
+                            <label for="vaultAddKey" class="sr-only">Vault Item Key</label>
+                            <input type="text" id="vaultAddKey" placeholder="Key (e.g. passport_num)" aria-label="Vault item key" class="flex-1 neu-flat rounded-lg px-3 py-2 text-body-sm bg-transparent border-none outline-none" required />
+                            <label for="vaultAddValue" class="sr-only">Vault Item Value</label>
+                            <input type="password" id="vaultAddValue" placeholder="Value" aria-label="Vault item value" class="flex-1 neu-flat rounded-lg px-3 py-2 text-body-sm bg-transparent border-none outline-none" required />
+                            <button type="submit" class="p-2 neu-btn-primary rounded-lg text-primary flex items-center justify-center shrink-0" title="Add to Vault" aria-label="Add to Vault"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">add</span></button>
                         </form>
                     </div>
 
@@ -290,27 +301,31 @@
     </div>
 
     <!-- OVERLAYS -->
-    <div id="hitlOverlay" hidden class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div id="hitlOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="hitlHeading" aria-describedby="hitlQuestion" class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="neu-flat rounded-2xl p-6 w-[400px] flex flex-col">
-            <div class="flex items-center gap-2 text-primary font-bold mb-3">
-                <span class="material-symbols-outlined">help</span> Agent needs input
+            <div class="flex items-center gap-2 text-primary font-bold mb-3" id="hitlHeading">
+                <span class="material-symbols-outlined" aria-hidden="true">help</span> Agent needs input
             </div>
             <p id="hitlQuestion" class="text-[14px] text-on-surface mb-4">Loading...</p>
-            <input id="hitlInput" type="text" class="neu-recessed w-full rounded-lg px-3 py-2 text-[13px] border-none outline-none mb-3"/>
+            <label for="hitlInput" class="sr-only">Agent Question Response</label>
+            <input id="hitlInput" type="text" aria-labelledby="hitlHeading" aria-describedby="hitlQuestion" class="neu-recessed w-full rounded-lg px-3 py-2 text-[13px] border-none outline-none mb-3"/>
             <div class="flex items-center justify-between mb-4">
-                <label class="flex items-center gap-2 text-[11px] text-on-surface-variant cursor-pointer">
+                <label for="hitlSaveToVault" class="flex items-center gap-2 text-[11px] text-on-surface-variant cursor-pointer">
                     <input type="checkbox" id="hitlSaveToVault" class="accent-primary" checked> Save to Vault
                 </label>
                 <span id="hitlVaultKeyLabel" hidden class="text-[10px] text-outline">Key: <code id="hitlVaultKey" class="text-primary font-bold"></code></span>
             </div>
-            <button id="hitlSendBtn" class="w-full py-2 neu-btn-primary text-primary font-bold text-[12px] uppercase rounded-lg">Send Response</button>
+            <div class="flex gap-3 w-full">
+                <button id="hitlAbortBtn" class="flex-1 py-2 neu-btn text-on-surface font-bold text-[12px] uppercase rounded-lg">Cancel</button>
+                <button id="hitlSendBtn" class="flex-1 py-2 neu-btn-primary text-primary font-bold text-[12px] uppercase rounded-lg">Send</button>
+            </div>
         </div>
     </div>
 
-    <div id="approvalOverlay" hidden class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div id="approvalOverlay" hidden role="alertdialog" aria-modal="true" aria-labelledby="approvalTitle" aria-describedby="approvalContext" class="fixed inset-0 bg-surface/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="neu-flat rounded-2xl p-6 w-[360px] text-center flex flex-col items-center">
-            <span class="material-symbols-outlined text-[40px] text-warning mb-3 animate-pulse">warning</span>
-            <h2 class="text-[16px] font-bold text-on-surface mb-2">Action Approval</h2>
+            <span class="material-symbols-outlined text-[40px] text-warning mb-3 animate-pulse" aria-hidden="true">warning</span>
+            <h2 id="approvalTitle" class="text-[16px] font-bold text-on-surface mb-2">Action Approval</h2>
             <p id="approvalContext" class="text-[13px] text-on-surface-variant mb-2"></p>
             <div id="approvalDetail" class="neu-recessed w-full p-2 rounded text-[11px] font-mono text-warning break-all mb-4"></div>
             <div class="flex gap-3 w-full">
@@ -320,12 +335,11 @@
         </div>
     </div>
 
-    
-    <div id="videoModal" hidden class="bg-surface/90 backdrop-blur-md flex flex-col p-6 transition-all" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999999; margin: 0;">
+    <div id="videoModal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle" class="bg-surface/90 backdrop-blur-md flex flex-col p-6 transition-all" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999999; margin: 0;">
         <div class="flex justify-between items-center mb-4 w-full shrink-0">
             <h2 id="modalTitle" class="text-[18px] font-bold text-on-surface flex items-center gap-2"></h2>
-            <button id="modalClose" class="w-10 h-10 rounded-full neu-btn text-on-surface flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined">close</span>
+            <button id="modalClose" title="Close fullscreen view" aria-label="Close fullscreen view" class="w-10 h-10 rounded-full neu-btn text-on-surface flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
         </div>
         <div class="flex-1 neu-recessed rounded-2xl relative overflow-hidden bg-[#000] p-2 w-full flex items-center justify-center">
