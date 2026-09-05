@@ -196,9 +196,7 @@ if (tablist) {
 let targetTabId = null;
 const params = new URLSearchParams(window.location.search);
 const isPopoutMode = params.get("popout") === "true" ||
-                     params.get("mode") === "tab" ||
-                     window.innerWidth > 800 ||
-                     window.innerHeight > 600;
+                     params.get("mode") === "tab";
 
 if (isPopoutMode) {
   document.documentElement.classList.add("popout-mode");
@@ -209,8 +207,8 @@ const btnPopout = document.getElementById("btnPopout");
 const btnTestConnection = document.getElementById("btnTestConnection");
 
 (async () => {
-  if (isPopoutMode || window.matchMedia("(min-width: 801px)").matches) {
-    // We're likely in a full tab - resolve the target tab now
+  if (isPopoutMode) {
+    // We're in a full tab - resolve the target tab now
     const allTabs = await chrome.tabs.query({ currentWindow: true });
     const webTab = allTabs.find(t => !t.active && !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"))
       || allTabs.find(t => !t.url?.startsWith("chrome-extension://") && !t.url?.startsWith("chrome://"));

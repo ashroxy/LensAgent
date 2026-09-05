@@ -8,10 +8,10 @@
     <link href="popup.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 </head>
-<body class="bg-background text-on-surface font-body-md flex flex-col md:flex-row overflow-hidden w-full h-screen md:w-[800px] md:h-[600px]">
-    <!-- SideNavBar (Bottom bar on mobile) -->
-    <nav class="order-last md:order-first w-full md:w-[200px] h-14 md:h-full bg-surface-container-low border-t md:border-t-0 md:border-r border-outline-variant/10 shadow-sm flex flex-row md:flex-col py-1 md:py-6 shrink-0 z-20">
-        <div class="hidden md:flex px-6 mb-8 items-center gap-3">
+<body class="bg-background text-on-surface font-body-md flex overflow-hidden" style="width: 800px; height: 600px; min-width: 800px; min-height: 600px;">
+    <!-- SideNavBar -->
+    <nav class="w-[200px] h-full bg-surface-container-low border-r border-outline-variant/10 shadow-sm flex flex-col py-6 shrink-0 z-20">
+        <div class="px-6 mb-8 flex items-center gap-3">
             <div class="w-10 h-10 rounded-full neu-extruded bg-surface flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-primary" aria-hidden="true">lens</span>
             </div>
@@ -20,20 +20,20 @@
                 <p class="font-label-mono text-[10px] text-on-surface-variant">v1.0.0-stable</p>
             </div>
         </div>
-        <div class="flex-1 flex flex-row md:flex-col justify-around md:justify-start gap-1 md:gap-2 px-2 md:px-3" role="tablist" aria-label="Navigation Tabs">
-            <button class="nav-btn active flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="agent" role="tab" id="tab-btn-agent" aria-selected="true" aria-controls="tab-agent" aria-label="Agent Dashboard" tabindex="0">
+        <div class="flex-1 flex flex-col gap-2 px-3" role="tablist" aria-label="Navigation Tabs">
+            <button class="nav-btn active flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="agent" role="tab" id="tab-btn-agent" aria-selected="true" aria-controls="tab-agent" aria-label="Agent Dashboard" tabindex="0">
                 <span class="material-symbols-outlined text-[24px]" aria-hidden="true">smart_toy</span>
                 <span class="font-body-md text-body-md">Agent</span>
             </button>
-            <button class="nav-btn flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="settings" role="tab" id="tab-btn-settings" aria-selected="false" aria-controls="tab-settings" aria-label="System Settings" tabindex="0">
+            <button class="nav-btn flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="settings" role="tab" id="tab-btn-settings" aria-selected="false" aria-controls="tab-settings" aria-label="System Settings" tabindex="0">
                 <span class="material-symbols-outlined text-[24px]" aria-hidden="true">settings</span>
                 <span class="font-body-md text-body-md">Settings</span>
             </button>
-            <button class="nav-btn flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="history" role="tab" id="tab-btn-history" aria-selected="false" aria-controls="tab-history" aria-label="Session History" tabindex="0">
+            <button class="nav-btn flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="history" role="tab" id="tab-btn-history" aria-selected="false" aria-controls="tab-history" aria-label="Session History" tabindex="0">
                 <span class="material-symbols-outlined text-[24px]" aria-hidden="true">history</span>
                 <span class="font-body-md text-body-md">History</span>
             </button>
-            <button class="nav-btn flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-lg text-on-surface-variant w-full text-center md:text-left" data-tab="vault" role="tab" id="tab-btn-vault" aria-selected="false" aria-controls="tab-vault" aria-label="Identity Vault" tabindex="0">
+            <button class="nav-btn flex items-center justify-start gap-3 px-4 py-3 rounded-lg text-on-surface-variant w-full text-left" data-tab="vault" role="tab" id="tab-btn-vault" aria-selected="false" aria-controls="tab-vault" aria-label="Identity Vault" tabindex="0">
                 <span class="material-symbols-outlined text-[24px]" aria-hidden="true">lock</span>
                 <span class="font-body-md text-body-md">Vault</span>
             </button>
@@ -43,10 +43,10 @@
     <!-- Main Viewport Area -->
     <div class="flex-1 flex flex-col h-full relative overflow-hidden">
         <!-- TopAppBar -->
-        <header class="h-14 md:h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 shrink-0 z-10 border-b border-outline-variant/10">
-            <div class="font-headline-md text-[16px] md:text-headline-md font-bold text-on-surface truncate" id="headerTitle">Agent Dashboard</div>
+        <header class="h-16 bg-surface/80 backdrop-blur-md flex items-center justify-between px-8 shrink-0 z-10 border-b border-outline-variant/10">
+            <div class="font-headline-md text-headline-md font-bold text-on-surface truncate" id="headerTitle">Agent Dashboard</div>
             <div class="flex items-center gap-4">
-                <button id="btnPopout" title="Open in new tab" aria-label="Open in new tab" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors hidden md:flex">
+                <button id="btnPopout" title="Open in new tab" aria-label="Open in new tab" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
                     <span class="material-symbols-outlined text-[18px]" aria-hidden="true">open_in_new</span>
                 </button>
                 <button id="btnTestConnection" title="Test Connection" aria-label="Test backend connection" class="w-8 h-8 rounded-full neu-btn-secondary flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
@@ -66,7 +66,7 @@
             <!-- AGENT TAB -->
             <section id="tab-agent" class="tab-content active flex-col gap-6 overflow-y-auto pr-2" role="tabpanel" aria-labelledby="tab-btn-agent">
                 <!-- Top Row -->
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-end">
+                <div class="flex gap-4 items-end">
                     <div class="flex-1">
                         <label for="goalInput" class="block font-label-md text-[11px] text-on-surface-variant mb-2 ml-2 uppercase tracking-wider">Agent Goal</label>
                         <div class="neu-recessed rounded-xl px-4 py-3 flex items-center gap-3">
@@ -75,7 +75,7 @@
                         </div>
                         <div id="errorMsg" hidden class="text-[11px] text-error font-bold mt-2 ml-2 transition-opacity duration-300 opacity-0"></div>
                     </div>
-                    <div class="flex gap-2 sm:gap-3 shrink-0">
+                    <div class="flex gap-3 shrink-0">
                         <button id="startBtn" class="neu-btn-primary text-primary px-6 py-3 rounded-xl font-label-md text-label-md flex items-center gap-2 uppercase tracking-wider">
                             <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span> Start
                         </button>
@@ -88,15 +88,15 @@
                 <!-- Dashboard Grid -->
                 <div class="flex flex-col gap-4">
                     <!-- Video Feeds (2x1) -->
-                    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px] lg:h-[260px]">
+                    <div class="grid gap-4 grid-cols-2">
+                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
                             <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Raw Viewport</span><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-primary" data-target="raw" aria-label="Expand Raw Viewport to fullscreen" title="Fullscreen"><span class="material-symbols-outlined text-[14px]" aria-hidden="true">fullscreen</span></button></div>
                             <div class="flex-1 neu-recessed rounded-xl relative overflow-hidden bg-[#000] flex items-center justify-center">
                                 <span id="liveStreamPlaceholder" class="absolute inset-0 flex items-center justify-center text-outline/40 font-mono text-[10px] uppercase z-0 tracking-widest pointer-events-none transition-opacity duration-300">Awaiting Signal</span>
                                 <canvas id="liveStream" width="1280" height="720" class="w-full h-full object-contain z-10 relative"></canvas>
                             </div>
                         </div>
-                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px] lg:h-[260px]">
+                        <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px]">
                             <div class="flex justify-between items-center mb-3"><span class="font-label-md text-[10px] text-on-surface-variant uppercase tracking-wider">Sanitized Stream</span><div class="flex items-center gap-2"><button class="expand-btn w-6 h-6 rounded neu-btn-secondary flex items-center justify-center text-tertiary" data-target="redacted" aria-label="Expand Sanitized Stream to fullscreen" title="Fullscreen"><span class="material-symbols-outlined text-[14px]" aria-hidden="true">fullscreen</span></button><div class="flex items-center gap-2 px-2 py-1 rounded bg-tertiary/10">
                                     <div class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></div>
                                     <span class="font-mono text-[9px] text-tertiary uppercase tracking-widest">Live</span>
@@ -111,7 +111,7 @@
 
                     <!-- Metrics (1x6) -->
                     <div class="neu-flat rounded-2xl p-4">
-                        <div class="grid gap-2 grid-cols-2 sm:grid-cols-4 md:grid-cols-7">
+                        <div class="grid gap-2 grid-cols-7">
                             <div class="neu-recessed rounded-xl px-1 py-2 flex flex-col justify-center items-center gap-1">
                                 <span class="font-label-md text-[9px] text-outline uppercase tracking-wider">Steps</span>
                                 <span class="font-mono text-[12px] font-bold text-primary whitespace-nowrap"><span id="stepCount">0</span> / <span id="maxSteps">?</span></span>
@@ -148,7 +148,7 @@
                     </div>
 
                     <!-- Terminal (Execution Log) -->
-                    <div class="neu-flat rounded-2xl p-4 flex flex-col h-[180px] md:h-[200px] lg:h-[240px] xl:h-[300px] shrink-0">
+                    <div class="neu-flat rounded-2xl p-4 flex flex-col h-[200px] shrink-0">
                         <div class="flex justify-between items-center mb-3">
                             <div class="flex items-center gap-2">
                                 <span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
@@ -169,8 +169,8 @@
             <section id="tab-settings" class="tab-content flex-col gap-6 overflow-y-auto pr-2" role="tabpanel" aria-labelledby="tab-btn-settings" aria-hidden="true">
                 <div class="neu-extruded rounded-2xl p-6">
                     <h3 class="font-headline-md text-[14px] text-on-surface mb-4 border-b border-outline-variant/30 pb-3">Connection</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-2 col-span-1 sm:col-span-2">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-2 col-span-2">
                             <label for="setting-serverUrl" class="font-label-md text-[11px] text-on-surface-variant uppercase tracking-wide">Server URL</label>
                             <input id="setting-serverUrl" type="url" placeholder="http://localhost:8000" class="neu-recessed bg-transparent border-none rounded-xl px-4 py-2.5 text-body-md text-primary outline-none w-full"/>
                         </div>
