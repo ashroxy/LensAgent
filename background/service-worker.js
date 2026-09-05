@@ -50,61 +50,16 @@ let offscreenPort = null;
 /** @type {number|null} */
 let activeTabId = null;
 
-/** @type {number|null} */
-let heartbeatInterval = null;
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// 1. SERVICE WORKER KEEP-ALIVE (Dual: Alarm + Port Heartbeat)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-chrome.alarms.create(ALARM_KEEPALIVE, { periodInMinutes: 1 });
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === ALARM_KEEPALIVE && offscreenPort) {
-    offscreenPort.postMessage({ type: HEARTBEAT_PING });
-  }
-});
-
-function startHeartbeat() {
-  stopHeartbeat();
-  heartbeatInterval = setInterval(() => {
-    if (offscreenPort) {
-      try {
-        offscreenPort.postMessage({ type: HEARTBEAT_PING });
-      } catch {
-        offscreenPort = null;
-        handleOffscreenCrash();
-      }
-    }
-  }, HEARTBEAT_INTERVAL);
-}
-
-function stopHeartbeat() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
-}
-
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
+// ========================================================================================================================
 // 2. OFFSCREEN DOCUMENT LIFECYCLE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ========================================================================================================================
 
 let creatingOffscreenPromise = null;
 
 async function ensureOffscreenDocument() {
-  // If port is already active and alive, nothing to do
-  if (offscreenPort) return;
-
-  // Because offscreenPort is null, we assume any existing document is a zombie.
-  // Unconditionally close it to ensure a clean slate, bypassing buggy hasDocument() checks.
-  console.log("[SW] Ensuring clean offscreen state...");
-  try {
-    await chrome.offscreen.closeDocument();
-    // Crucial: Give Chrome time to fully destroy the context before recreation
-    await new Promise(r => setTimeout(r, 250));
-  } catch (e) {
-    // Ignore error if no document actually existed
-  }
+  const hasDoc = await chrome.offscreen.hasDocument();
+  if (hasDoc) return;
 
   // If creation is currently in progress, await active promise
   if (creatingOffscreenPromise) {
@@ -112,12 +67,13 @@ async function ensureOffscreenDocument() {
     return;
   }
 
+  console.log("[SW] Creating offscreen document...");
   creatingOffscreenPromise = (async () => {
     try {
       await chrome.offscreen.createDocument({
         url:           "offscreen/offscreen.html",
-        reasons: ["DOM_PARSER", "WORKERS"],
-        justification: "On-device WebGPU visual inference and PII redaction for privacy-preserving browser agent.",
+        reasons:       [chrome.offscreen.Reason.DOM_SCRAPING, chrome.offscreen.Reason.WORKERS],
+        justification: "WebGPU ML Perception and DOM Redaction"
       });
       console.log("[SW] Fresh offscreen document created.");
     } catch (err) {
@@ -158,26 +114,8 @@ async function handleOffscreenCrash() {
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ========================================================================================================================
 // 3. PORT MANAGEMENT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === PORT_OFFSCREEN) {
-    offscreenPort = port;
-    startHeartbeat();
-    console.log("[SW] Offscreen channel connected.");
-
-    port.onDisconnect.addListener(() => {
-      offscreenPort = null;
-      stopHeartbeat();
-      console.warn("[SW] Offscreen channel disconnected.");
-      if (activeAgent && activeAgent.state === AgentState.RUNNING) {
-        activeAgent.pause();
-      }
-    });
-  }
-});
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // 4. TAB CHANGE DETECTION
@@ -327,15 +265,8 @@ async function handleStartAgent(goal, settingsOverride = null, targetTabId = nul
       return { status: "ERROR", error: `Cannot automate restricted page: ${url}` };
     }
 
-    // Ensure offscreen document is ready and port connected
+    // Ensure offscreen document is ready
     await ensureOffscreenDocument();
-
-    // Dynamically poll for port connection up to 3000ms
-    const portWaitStart = Date.now();
-    while (!offscreenPort && Date.now() - portWaitStart < 8000) {
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    if (!offscreenPort) return { status: "ERROR", error: "Offscreen perception engine failed to connect." };
 
     // Clean up any stale or lingering debugger attachment on this tab
     await new Promise((r) => chrome.debugger.detach({ tabId: tab.id }, () => {
